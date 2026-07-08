@@ -7,7 +7,7 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 💡 [표 스타일 보완 CSS]: 격자선 두께 및 외부 전체 블랙 레이아웃 강제 지정
+# 💡 [전체 레이아웃 및 사이드바 테마 강제 고정 CSS]
 st.markdown(
     """
     <style>
@@ -61,29 +61,8 @@ st.markdown(
         color: #ffffff !important;
         background-color: #1a1c1e !important;
     }
-
-    /* 3️⃣ 메인 결과 표 외부 컨테이너 스타일 고정 */
-    .stDataFrame table,
-    .stDataFrame th,
-    .stDataFrame td,
-    div[data-testid="stDataFrame"] th,
-    div[data-testid="stDataFrame"] td,
-    div[data-testid="stDataFrame"] [role="columnheader"] {
-        text-align: center !important;
-        justify-content: center !important;
-        align-items: center !important;
-        vertical-align: middle !important;
-        color: #000000 !important; 
-    }
-
-    /* 결과 표 외부를 둘러싼 그리드라인 바깥 테두리 두껍게 선언 */
-    .stDataFrame table,
-    div[data-testid="stDataFrame"] table {
-        border: 3px solid #000000 !important;
-        border-collapse: collapse !important;
-    }
     
-    /* 4️⃣ 에버리지 수치 영역 라벨색 고정 */
+    /* 3️⃣ 에버리지 수치 영역 라벨색 고정 */
     [data-testid="stMetricLabel"] { color: #aaaaaa !important; }
     [data-testid="stMetricValue"] { color: #ffffff !important; }
     </style>
@@ -151,7 +130,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_code_style_heavy_border"
+    key="liberit_code_style_html_perfect_table"
 )
 st.session_state.member_df = edited_df
 
@@ -238,38 +217,31 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     while len(left_lane) < max_len: left_lane.append("")
                     while len(right_lane) < max_len: right_lane.append("")
                     
-                    combined_table = pd.DataFrame({
-                        "⬅️ 좌측 레인": left_lane,
-                        "➡️ 우측 레인": right_lane
-                    })
+                    # 💡 [핵심 교체]: 무조건 굵은 검은색 테두리와 제목 가운데 정렬을 보장하는 HTML 직접 생성 방식
+                    html_table = f"""
+                    <table style="width:100%; border-collapse:collapse; border:3px solid #000000; text-align:center; vertical-align:middle; background-color:#e9ecef; font-family:sans-serif; font-size:15px;">
+                        <thead>
+                            <tr style="background-color:#ced4da;">
+                                <th style="border:3px solid #000000; padding:8px; color:#000000; font-weight:bold; text-align:center; width:50%;">⬅️ 좌측 레인</th>
+                                <th style="border:3px solid #000000; padding:8px; color:#000000; font-weight:bold; text-align:center; width:50%;">➡️ 우측 레인</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                    """
                     
-                    # 💡 [집중 수정]: 데이터 셀(td)과 제목 셀(th) 내부 모든 가로/세로 테두리를 3px 두꺼운 검은색으로 고정
-                    styled_table = combined_table.style.set_properties(**{
-                        'background-color': '#e9ecef',  
-                        'color': '#000000',             
-                        'font-weight': 'normal',
-                        'border': '3px solid #000000'   # 각 칸의 가로세로 테두리 두껍게 고정
-                    }).set_table_styles([
-                        # 헤더 제목 가로세로 테두리선 두껍게 지정 + 정중앙 정렬 속성 강화
-                        {'selector': 'th', 'props': [
-                            ('text-align', 'center'), 
-                            ('vertical-align', 'middle'), 
-                            ('background-color', '#ced4da'), 
-                            ('color', '#000000'), 
-                            ('font-weight', 'bold'), 
-                            ('border', '3px solid #000000')
-                        ]}
-                    ])
+                    for idx in range(max_len):
+                        html_table += f"""
+                            <tr>
+                                <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{left_lane[idx]}</td>
+                                <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{right_lane[idx]}</td>
+                            </tr>
+                        """
                     
-                    st.dataframe(
-                        styled_table, 
-                        use_container_width=True, 
-                        hide_index=True,
-                        column_config={
-                            "⬅️ 좌측 레인": st.column_config.TextColumn(alignment="center"),
-                            "➡️ 우측 레인": st.column_config.TextColumn(alignment="center")
-                        }
-                    )
+                    html_table += "</tbody></table>"
+                    
+                    # 브라우저와 컴포넌트 설정을 완전히 뛰어넘어 완벽한 표를 강제로 출력합니다.
+                    st.write(html_table, unsafe_allow_html=True)
+                    st.markdown("<br>", unsafe_allow_html=True) # 표와 에버리지 사이 간격 확보
                     st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
         except Exception as e:
