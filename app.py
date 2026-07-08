@@ -130,7 +130,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_code_style_html_perfect_table_v4"
+    key="liberit_code_style_html_fixed_v5"
 )
 st.session_state.member_df = edited_df
 
@@ -217,7 +217,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     while len(left_lane) < max_len: left_lane.append("")
                     while len(right_lane) < max_len: right_lane.append("")
                     
-                    # 💡 HTML 문자열을 절대 텍스트로 오해하지 않도록 마크업 구성
+                    # 깔끔한 UI 레이아웃 구성
                     html_table = f"""
                     <div style="padding: 2px; background-color: #000000;">
                         <table style="width:100%; border-collapse:collapse; border:3px solid #000000; text-align:center; vertical-align:middle; background-color:#e9ecef; font-family:sans-serif; font-size:15px;">
@@ -244,8 +244,8 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     </div>
                     """
                     
-                    # 🎯 [버그 원천 차단 변경]: st.write 대신 컴포넌트 전용 렌더러를 사용하여 iframe 형태로 완벽 격자 렌더링
-                    st.components.v1.html(html_table, height=(max_len * 42) + 50, scroller=False)
+                    # 🎯 [수정]: 오타난 인자 'scroller'를 올바른 'scrolling=False'로 변경하여 에러 완벽 해결
+                    st.components.v1.html(html_table, height=(max_len * 42) + 55, scrolling=False)
                     
                     st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
