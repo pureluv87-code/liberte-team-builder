@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+import os
 
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
@@ -20,9 +21,19 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# 💡 [핵심 수정]: 상단 타이틀과 함께 클럽 로고 이미지를 배치합니다.
 st.title("🎳 Liberte 정기전 레인별 팀 빌더")
-st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 조가 편성됩니다.")
 
+# 같은 폴더에 있는 logo.jpg (또는 logo.png) 파일을 읽어와 타이틀 아래에 깔끔하게 출력
+IMAGE_NAME = "logo.jpg"  # 만약 파일 확장자가 png라면 "logo.png"로 변경해주세요.
+
+if os.path.exists(IMAGE_NAME):
+    # 로고가 너무 크지 않게 width=400 정도로 상단 중앙/좌측 여백에 배치합니다.
+    st.image(IMAGE_NAME, width=400)
+else:
+    st.caption("💡 무대 위쪽 여백용 'logo.jpg' 파일을 app.py와 같은 폴더에 넣어주시면 로고가 표시됩니다.")
+
+st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 조가 편성됩니다.")
 st.markdown("---")
 
 # 2. 초기 원본 명단 고정 (기본 데이터)
@@ -164,11 +175,10 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
-                    # 💡 [핵심 수정]: 배경색을 더 어두운 회색(#e2e6ea)으로 내리고, font-weight 속성을 완전히 제거하여 기본 두께로 바꿨습니다.
                     styled_table = combined_table.style.set_properties(**{
-                        'background-color': '#e2e6ea',  # 기존보다 조금 더 차분하고 어두워진 배경색
-                        'color': '#111111',             # 진한 글자색 유지
-                        'font-weight': 'normal'         # 두껍게 효과 해제 (기본 텍스트 두께)
+                        'background-color': '#e2e6ea',  
+                        'color': '#111111',             
+                        'font-weight': 'normal'         
                     })
                     
                     st.dataframe(styled_table, use_container_width=True, hide_index=True)
