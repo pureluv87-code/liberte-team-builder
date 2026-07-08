@@ -17,7 +17,6 @@ RAW_DATA = {
     "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
 }
 
-# [안정화 핵심] 렉 방지를 위해 세션 데이터가 꼬이지 않도록 명확하게 관리합니다.
 if "member_df" not in st.session_state:
     st.session_state.member_df = pd.DataFrame(RAW_DATA)
 
@@ -27,26 +26,36 @@ num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
-st.sidebar.write("오늘 온 회원들을 체크해 주세요. 체크를 해제하면 즉시 반영됩니다.")
 
+# [렉 및 이중 체크 방지 핵심 수정] num_rows="dynamic"을 없애 가짜 체크박스 열을 원천 차단합니다.
 sidebar_column_config = {
     "참석": st.column_config.CheckboxColumn("참석", width="small", default=True),
     "이름": st.column_config.TextColumn("이름", width="medium", required=True),
     "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
 }
 
-# [버그 해결] 표가 지맘대로 새로고침 되는 현상을 막기 위해 value와 key의 매핑 구조를 완전히 독립시켰습니다.
 edited_df = st.sidebar.data_editor(
     st.session_state.member_df, 
-    num_rows="dynamic", 
+    num_rows="fixed", # 표 내부에서 자동으로 생기는 가짜 행 선택창을 완벽히 차단합니다.
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberte_perfect_editor" # 새로운 고유 키로 완전 초기화
+    key="liberte_no_fake_checkbox_editor"
 )
-
-# 사용자가 체크를 바꾸거나 수정하면 즉시 세션에 저장되도록 동기화
 st.session_state.member_df = edited_df
+
+# [기능 보완] 명단 추가/삭제가 필요할 경우를 위해 표 하단에 깔끔한 버튼으로 분리했습니다.
+col1, col2 = st.sidebar.columns(2)
+with col1:
+    if st.button("➕ 회원 추가", use_container_width=True):
+        new_row = pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150}])
+        st.session_state.member_df = pd.concat([st.session_state.member_df, new_row], ignore_index=True)
+        st.rerun()
+with col2:
+    if st.button("❌ 맨 아래 삭제", use_container_width=True):
+        if len(st.session_state.member_df) > 0:
+            st.session_state.member_df = st.session_state.member_df.drop(st.session_state.member_df.index[-1])
+            st.rerun()
 
 st.sidebar.markdown("---")
 st.sidebar.write("💡 **안내:**")
@@ -54,7 +63,6 @@ st.sidebar.write("결과 화면에는 테이블 하단에 통합 에버리지만
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
-    # 최신 편집된 데이터(edited_df)를 기준으로 안전하게 계산 수행
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     players = players.sort_values(by="에버리지", ascending=False).reset_index(drop=True)
