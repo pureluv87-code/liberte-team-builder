@@ -100,7 +100,7 @@ num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 
-# 전체 선택/해제 일괄 처리 단추
+# 전체 선택/해제 버튼 (세션에 반영 후 리런)
 btn_col1, btn_col2 = st.sidebar.columns(2)
 with btn_col1:
     if st.button("✅ 전체 선택", use_container_width=True):
@@ -117,44 +117,40 @@ sidebar_column_config = {
     "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# 🎯 [핵심 변경]: 편집 창을 전용 Form으로 감싸서 마우스 클릭 시 무한 렌더링(렉) 현상을 원천 차단
-with st.sidebar.form(key="fast_editor_form"):
-    edited_df = st.data_editor(
-        st.session_state.member_df, 
-        num_rows="fixed", 
-        use_container_width=True,
-        column_config=sidebar_column_config,
-        hide_index=True,
-        key="form_editor_data"
-    )
-    
-    # 변경 사항을 세션에 딱 한 번만 밀어넣어 줄 저장 버튼
-    submit_changes = st.form_submit_button("💾 명단 편집 확정", use_container_width=True)
-    if submit_changes:
-        st.session_state.member_df = edited_df
-        st.toast("✅ 명단 변경 사항이 완벽히 기록되었습니다!", icon="💾")
+# 🎯 [핵심 변경 1]: 온체인지 콜백과 Form을 모두 제거하고, 순수하게 세션 데이터 보관만 진행
+# 사용자가 수정하는 데이터는 실시간 새로고침 없이 브라우저 단에서 엄청나게 빠르게 토글됩니다.
+edited_df = st.sidebar.data_editor(
+    st.session_state.member_df, 
+    num_rows="fixed", 
+    use_container_width=True,
+    column_config=sidebar_column_config,
+    hide_index=True,
+    key="direct_team_builder_editor"
+)
 
 # 회원 추가/삭제 버튼
 col1, col2 = st.sidebar.columns(2)
 with col1:
     if st.button("➕ 회원 추가", use_container_width=True):
+        st.session_state.member_df = edited_df  # 추가 전 현재 체크 상태 보존
         new_row = pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150}])
         st.session_state.member_df = pd.concat([st.session_state.member_df, new_row], ignore_index=True)
         st.rerun()
 with col2:
     if st.button("❌ 맨 아래 삭제", use_container_width=True):
-        if len(st.session_state.member_df) > 0:
-            st.session_state.member_df = st.session_state.member_df.drop(st.session_state.member_df.index[-1]).reset_index(drop=True)
+        if len(edited_df) > 0:
+            st.session_state.member_df = edited_df.drop(edited_df.index[-1]).reset_index(drop=True)
             st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.write("💡 **이용 팁:** 왼쪽 명단을 고친 후 반드시 `💾 명단 편집 확정` 단추를 먼저 누르고, 메인 화면의 팀 짜기 버튼을 눌러주세요.")
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
-    # 버튼을 누른 순간 폼 결과 또는 세션 결과의 최종본을 즉시 대입
-    final_df = edited_df if 'edited_df' in locals() else st.session_state.member_df
-    players = final_df[final_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
+    # 🎯 [핵심 변경 2]: 버튼을 클릭한 '바로 그 순간' 에디터에 쌓여있던 최종 메모리 데이터(edited_df)를 그대로 낚아챕니다!
+    # 이 덕분에 임시 저장 버튼을 누를 필요가 전혀 없어집니다.
+    st.session_state.member_df = edited_df
+    
+    players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     
     total_players = len(players)
