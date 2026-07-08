@@ -32,10 +32,8 @@ RAW_DATA = {
     "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
 }
 
-# 💡 [핵심 수정]: 세션 상태를 초기화할 때부터 에버리지 기준 내림차순 정렬을 확실하게 먹여줍니다.
 if "member_df" not in st.session_state:
-    initial_df = pd.DataFrame(RAW_DATA)
-    st.session_state.member_df = initial_df.sort_values(by="에버리지", ascending=False).reset_index(drop=True)
+    st.session_state.member_df = pd.DataFrame(RAW_DATA)
 
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
@@ -62,18 +60,14 @@ sidebar_column_config = {
     "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# 💡 [정렬 유지]: 데이터 에디터에 밀어넣기 전 한 번 더 에버리지 높은 순으로 정렬합니다.
-current_df = st.session_state.member_df.sort_values(by="에버리지", ascending=False).reset_index(drop=True)
-
 edited_df = st.sidebar.data_editor(
-    current_df, 
+    st.session_state.member_df, 
     num_rows="fixed", 
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
     key="liberte_speed_master_editor"
 )
-st.session_state.member_df = edited_df
 
 # 회원 추가/삭제 버튼
 col1, col2 = st.sidebar.columns(2)
@@ -81,8 +75,6 @@ with col1:
     if st.button("➕ 회원 추가", use_container_width=True):
         new_row = pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150}])
         st.session_state.member_df = pd.concat([st.session_state.member_df, new_row], ignore_index=True)
-        # 회원 추가 후 정렬이 꼬이지 않도록 내림차순 정렬을 강제 적용합니다.
-        st.session_state.member_df = st.session_state.member_df.sort_values(by="에버리지", ascending=False).reset_index(drop=True)
         st.rerun()
 with col2:
     if st.button("❌ 맨 아래 삭제", use_container_width=True):
@@ -138,6 +130,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                 
                 teams = best_teams
 
+            # 💡 [요청 사항 반영]: 결과 표 바로 위에 직관적이고 깔끔하게 참석 인원과 테이블 수만 출력합니다.
             st.info(f"📊 **오늘 총 참석 인원:** {total_players}명  |  🏟️ **배정 테이블 수:** {num_teams}개")
             
             table_cols = st.columns([1] * num_teams)
