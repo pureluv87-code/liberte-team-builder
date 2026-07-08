@@ -130,12 +130,14 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                 
                 teams = best_teams
 
+            # 💡 [요청 사항 반영]: 결과 표 바로 위에 직관적이고 깔끔하게 참석 인원과 테이블 수만 출력합니다.
+            st.info(f"📊 **오늘 총 참석 인원:** {total_players}명  |  🏟️ **배정 테이블 수:** {num_teams}개")
+            
             table_cols = st.columns([1] * num_teams)
             for i in range(num_teams):
                 with table_cols[i]:
                     st.markdown(f"### 🏟️ {i+1}번 테이블")
                     
-                    # 💡 [핵심 수정]: 팀 내 에버리지 정렬 코드를 삭제하고, 배정된 멤버를 한 번 더 무작위(.sample(frac=1))로 섞습니다.
                     current_team_df = pd.DataFrame(teams[i], columns=["이름", "에버리지"]).sample(frac=1).reset_index(drop=True)
                     total_avg = current_team_df["에버리지"].mean()
                     
