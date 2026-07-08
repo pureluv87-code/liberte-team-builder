@@ -80,11 +80,12 @@ if os.path.exists(IMAGE_NAME):
 else:
     st.caption("💡 최상단 여백용 'logo.jpg' 파일을 app.py와 같은 폴더에 넣어주시면 로고가 표시됩니다.")
 
+# 로고 밑 타이틀과 기본 안내 문구
 st.title("🎳 Liberte 정기전 레인별 팀 빌더")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 조가 편성됩니다.")
 st.markdown("---")
 
-# 2. 데이터 초기화 및 상태 관리
+# 2. 초기 원본 명단 고정 (기본 데이터 고정 및 정렬방식 단일화)
 if "member_df" not in st.session_state:
     RAW_DATA = {
         "참석": [True] * 31,
@@ -93,16 +94,6 @@ if "member_df" not in st.session_state:
     }
     st.session_state.member_df = pd.DataFrame(RAW_DATA)
 
-# 💡 [핵심 추가]: 사용자가 체크박스를 건드리는 순간 딜레이 없이 즉시 세션으로 강제 동기화하는 콜백 함수
-def update_editor_state():
-    if "realtime_editor_key" in st.session_state:
-        changes = st.session_state["realtime_editor_key"]
-        # 수정된 셀(edited_rows) 실시간 반영
-        if "edited_rows" in changes:
-            for row_idx, changed_cols in changes["edited_rows"].items():
-                for col_name, new_val in changed_cols.items():
-                    st.session_state.member_df.at[row_idx, col_name] = new_val
-
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
 num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
@@ -110,7 +101,7 @@ num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 
-# 전체 선택/해제 버튼
+# 전체 선택/해제 버튼 클릭 시 세션에 즉시 반영 후 리런
 btn_col1, btn_col2 = st.sidebar.columns(2)
 with btn_col1:
     if st.button("✅ 전체 선택", use_container_width=True):
@@ -121,22 +112,25 @@ with btn_col2:
         st.session_state.member_df["참석"] = False
         st.rerun()
 
+# 열 너비 세팅
 sidebar_column_config = {
     "참석": st.column_config.CheckboxColumn("참석", width=45, default=True),
     "이름": st.column_config.TextColumn("이름", width=80, required=True),
     "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# 🎯 data_editor에 on_change 콜백 함수를 걸어 마우스 클릭 즉시 실시간 동기화 트리거
-st.sidebar.data_editor(
+# 💡 [핵심 버그 수정]: 무조건 세션 스테이트 고정 상수를 key로 연동하여 실시간 데이터 유실을 차단합니다.
+edited_df = st.sidebar.data_editor(
     st.session_state.member_df, 
     num_rows="fixed", 
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="realtime_editor_key",
-    on_change=update_editor_state
+    key="stable_member_editor_v6"
 )
+
+# 사용자가 마우스로 편집한 결과물은 즉시 세션 보관함에 연동시킵니다.
+st.session_state.member_df = edited_df
 
 # 회원 추가/삭제 버튼
 col1, col2 = st.sidebar.columns(2)
@@ -156,6 +150,7 @@ st.sidebar.write("💡 **안내:** 결과 화면에는 테이블별 조편성과
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
+    # 버튼을 누른 최종 시점의 저장된 명단을 완벽하게 가져와서 필터링합니다.
     final_df = st.session_state.member_df
     players = final_df[final_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
