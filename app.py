@@ -21,18 +21,17 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 💡 [핵심 수정]: 상단 타이틀과 함께 클럽 로고 이미지를 배치합니다.
-st.title("🎳 Liberte 정기전 레인별 팀 빌더")
-
-# 같은 폴더에 있는 logo.jpg (또는 logo.png) 파일을 읽어와 타이틀 아래에 깔끔하게 출력
-IMAGE_NAME = "logo.jpg"  # 만약 파일 확장자가 png라면 "logo.png"로 변경해주세요.
+# 💡 [핵심 수정]: 타이틀보다 로고 이미지를 맨 위로 올렸습니다.
+IMAGE_NAME = "logo.jpg"  # 파일 확장자가 png라면 "logo.png"로 변경해주세요.
 
 if os.path.exists(IMAGE_NAME):
-    # 로고가 너무 크지 않게 width=400 정도로 상단 중앙/좌측 여백에 배치합니다.
+    # 로고가 너무 크면 화면을 다 차지하므로 width=400 정도로 상단에 깔끔하게 배치합니다.
     st.image(IMAGE_NAME, width=400)
 else:
-    st.caption("💡 무대 위쪽 여백용 'logo.jpg' 파일을 app.py와 같은 폴더에 넣어주시면 로고가 표시됩니다.")
+    st.caption("💡 최상단 여백용 'logo.jpg' 파일을 app.py와 같은 폴더에 넣어주시면 로고가 표시됩니다.")
 
+# 로고 바로 밑에 타이틀과 기본 안내 문구가 위치합니다.
+st.title("🎳 Liberte 정기전 레인별 팀 빌더")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 조가 편성됩니다.")
 st.markdown("---")
 
@@ -117,7 +116,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     else:
         try:
             with st.spinner("🎳 Liberte 최적의 황금 밸런스 조합을 계산하는 중..."):
-                time.sleep(2)
+                time.sleep(0.5)
                 
                 best_teams = None
                 best_diff = 999.0
