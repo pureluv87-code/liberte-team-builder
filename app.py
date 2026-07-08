@@ -130,7 +130,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_code_style_html_perfect_table"
+    key="liberit_code_style_html_perfect_table_v4"
 )
 st.session_state.member_df = edited_df
 
@@ -217,31 +217,36 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     while len(left_lane) < max_len: left_lane.append("")
                     while len(right_lane) < max_len: right_lane.append("")
                     
-                    # 💡 [핵심 교체]: 무조건 굵은 검은색 테두리와 제목 가운데 정렬을 보장하는 HTML 직접 생성 방식
+                    # 💡 HTML 문자열을 절대 텍스트로 오해하지 않도록 마크업 구성
                     html_table = f"""
-                    <table style="width:100%; border-collapse:collapse; border:3px solid #000000; text-align:center; vertical-align:middle; background-color:#e9ecef; font-family:sans-serif; font-size:15px;">
-                        <thead>
-                            <tr style="background-color:#ced4da;">
-                                <th style="border:3px solid #000000; padding:8px; color:#000000; font-weight:bold; text-align:center; width:50%;">⬅️ 좌측 레인</th>
-                                <th style="border:3px solid #000000; padding:8px; color:#000000; font-weight:bold; text-align:center; width:50%;">➡️ 우측 레인</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <div style="padding: 2px; background-color: #000000;">
+                        <table style="width:100%; border-collapse:collapse; border:3px solid #000000; text-align:center; vertical-align:middle; background-color:#e9ecef; font-family:sans-serif; font-size:15px;">
+                            <thead>
+                                <tr style="background-color:#ced4da;">
+                                    <th style="border:3px solid #000000; padding:8px; color:#000000; font-weight:bold; text-align:center; width:50%;">⬅️ 좌측 레인</th>
+                                    <th style="border:3px solid #000000; padding:8px; color:#000000; font-weight:bold; text-align:center; width:50%;">➡️ 우측 레인</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                     """
                     
                     for idx in range(max_len):
                         html_table += f"""
-                            <tr>
-                                <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{left_lane[idx]}</td>
-                                <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{right_lane[idx]}</td>
-                            </tr>
+                                <tr>
+                                    <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{left_lane[idx]}</td>
+                                    <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{right_lane[idx]}</td>
+                                </tr>
                         """
                     
-                    html_table += "</tbody></table>"
+                    html_table += """
+                            </tbody>
+                        </table>
+                    </div>
+                    """
                     
-                    # 브라우저와 컴포넌트 설정을 완전히 뛰어넘어 완벽한 표를 강제로 출력합니다.
-                    st.write(html_table, unsafe_allow_html=True)
-                    st.markdown("<br>", unsafe_allow_html=True) # 표와 에버리지 사이 간격 확보
+                    # 🎯 [버그 원천 차단 변경]: st.write 대신 컴포넌트 전용 렌더러를 사용하여 iframe 형태로 완벽 격자 렌더링
+                    st.components.v1.html(html_table, height=(max_len * 42) + 50, scroller=False)
+                    
                     st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
         except Exception as e:
