@@ -7,7 +7,7 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 💡 [디자인 커스텀 CSS]: 전체 블랙 배경, 표 테두리 검은색, 표 내부 글자 두껍게 제거, 제목 가운데 정렬
+# 💡 [표 스타일 집중 보완 CSS]: 내부 격자 테두리 블랙 및 헤더 제목 가운데 정렬 강제 주입
 st.markdown(
     """
     <style>
@@ -63,25 +63,30 @@ st.markdown(
     }
 
     /* 3️⃣ 메인 결과 표 스타일 완벽 고정 */
-    /* 🎯 표 제목(th)과 내부 텍스트(td) 모두 가운데 정렬 및 글자색 고정 */
+    /* 🎯 표 제목 헤더(th, .corner-header 등)와 내부 셀(td)까지 전부 완벽 정중앙 정렬 */
     .stDataFrame table,
     .stDataFrame th,
     .stDataFrame td,
-    [data-testid="stTable"] th,
-    [data-testid="stTable"] td {
+    div[data-testid="stDataFrame"] th,
+    div[data-testid="stDataFrame"] td,
+    div[data-testid="stDataFrame"] [role="columnheader"] {
         text-align: center !important;
+        justify-content: center !important;
+        align-items: center !important;
         vertical-align: middle !important;
         color: #000000 !important; 
     }
 
-    /* 🔲 결과 표 격자 테두리선을 선명한 검은색(#000000)으로 고정 */
+    /* 🔲 결과 표 외곽 및 내부 모든 칸의 격자 테두리선(border)을 선명한 검은색(#000000)으로 강제 적용 */
     .stDataFrame table,
     .stDataFrame th,
     .stDataFrame td,
-    div[data-testid="stTable"] table,
-    div[data-testid="stTable"] th,
-    div[data-testid="stTable"] td {
-        border: 2px solid #000000 !important;
+    div[data-testid="stDataFrame"] table,
+    div[data-testid="stDataFrame"] th,
+    div[data-testid="stDataFrame"] td,
+    div[data-testid="stDataFrame"] tr {
+        border: 1.5px solid #000000 !important;
+        border-collapse: collapse !important;
     }
     
     /* 4️⃣ 에버리지 수치 영역 라벨색 고정 */
@@ -152,7 +157,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_code_only_style_v3"
+    key="liberit_code_style_final_perfect"
 )
 st.session_state.member_df = edited_df
 
@@ -244,13 +249,18 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
-                    # 💡 [수정]: 'font-weight': 'normal'로 세팅하여 표 안의 이름 두껍게 효과를 제거함
+                    # 💡 표 안의 스타일 및 내부 테두리 블랙 속성 명시적 선언
                     styled_table = combined_table.style.set_properties(**{
                         'background-color': '#e9ecef',  
                         'color': '#000000',             
-                        'font-weight': 'normal'
-                    })
+                        'font-weight': 'normal',
+                        'border': '1.5px solid #000000'
+                    }).set_table_styles([
+                        # 표 헤더 제목(th) 영역을 타겟팅하여 정중앙 정렬 강제 주입
+                        {'selector': 'th', 'props': [('text-align', 'center'), ('vertical-align', 'middle'), ('background-color', '#ced4da'), ('color', '#000000'), ('font-weight', 'bold'), ('border', '1.5px solid #000000')]}
+                    ])
                     
+                    # st.dataframe 내부 설정에서도 가운데 정렬 재확인 고정
                     st.dataframe(
                         styled_table, 
                         use_container_width=True, 
