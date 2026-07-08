@@ -7,22 +7,23 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 사이드바 내부 표의 간격 조절 및 💡 [추가] 통합 에버리지(Metric) 영역을 가운데 정렬하는 CSS 지정을 포함합니다.
+# 사이드바 촘촘하게 + 🎯 [핵심 수정]: 메인 화면 결과 표 내부의 글자(이름)들을 무조건 가운데 정렬하는 CSS 추가
 st.markdown(
     """
     <style>
+    /* 사이드바 스타일 조절 */
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th {
         padding: 2px 4px !important;
         font-size: 13px !important;
     }
     
-    /* 🎯 메인 화면의 모든 st.metric(통합 에버리지) 요소를 강제로 가운데 정렬 */
-    [data-testid="stMetric"] {
+    /* 🔥 메인 결과 표 내부의 텍스트(이름)들을 완벽하게 가운데 정렬 */
+    .stDataFrame div[data-testid="stTable"] td,
+    .stDataFrame div[data-testid="stTable"] th,
+    [data-testid="stDataFrame"] td,
+    [data-testid="stDataFrame"] th {
         text-align: center !important;
-    }
-    [data-testid="stMetric"] div {
-        justify-content: center !important;
     }
     </style>
     """,
@@ -183,15 +184,15 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
-                    # 💡 [핵심 수정]: 'text-align': 'center' 속성을 추가하여 표 내부 글자들을 가운데 정렬합니다.
                     styled_table = combined_table.style.set_properties(**{
                         'background-color': '#e2e6ea',  
                         'color': '#111111',             
-                        'font-weight': 'normal',
-                        'text-align': 'center'          # 셀 내부 텍스트 가운데 정렬
+                        'font-weight': 'normal'
                     })
                     
                     st.dataframe(styled_table, use_container_width=True, hide_index=True)
+                    
+                    # 💡 [원상 복구]: 에버리지 수치 정렬 스타일을 삭제하여 순정 형태(왼쪽 정렬)로 되돌렸습니다.
                     st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
         except Exception as e:
