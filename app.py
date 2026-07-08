@@ -7,42 +7,52 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 💡 [핵심 수정]: 사이드바 배경색을 진하게 만들고 결과 표의 테두리선을 선명하게 만드는 CSS 주입
+# 💡 [디자인 전면 보완]: 사이드바 어두운 회색, 표 헤더 가운데 정렬, 테두리 검은색 강제 적용 CSS
 st.markdown(
     """
     <style>
-    /* ⬅️ 왼쪽 사이드바 메뉴창 배경색을 진한 회색(#dee2e6)으로 변경 */
-    [data-testid="stSidebar"] {
-        background-color: #dee2e6 !important;
+    /* ⬅️ 왼쪽 사이드바 메뉴창 자체를 확실한 어두운 회색(#495057)으로 변경 */
+    [data-testid="stSidebar"], 
+    [data-testid="stSidebarContent"], 
+    section[data-sidebar="true"] > div {
+        background-color: #495057 !important;
     }
     
-    /* 사이드바 내부 타이틀 글자색 등이 묻히지 않도록 조정 */
-    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p {
-        color: #111111 !important;
+    /* 사이드바 글자색들이 묻히지 않도록 깔끔한 흰색 계열(#f8f9fa)로 변경 */
+    [data-testid="stSidebar"] h1, 
+    [data-testid="stSidebar"] h2, 
+    [data-testid="stSidebar"] h3, 
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] span {
+        color: #f8f9fa !important;
     }
 
-    /* 사이드바 내부 표의 간격과 글자 크기 촘촘하게 조절 */
+    /* 사이드바 내부 표 간격 촘촘하게 */
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th {
         padding: 2px 4px !important;
         font-size: 13px !important;
     }
     
-    /* 🎯 메인 결과 표 내부의 텍스트(이름)들을 완벽하게 가운데 정렬 */
-    .stDataFrame div[data-testid="stTable"] td,
-    .stDataFrame div[data-testid="stTable"] th,
-    [data-testid="stDataFrame"] td,
-    [data-testid="stDataFrame"] th {
+    /* 🎯 메인 결과 표 내부의 이름(td)과 제목 헤더(th)까지 모두 완벽하게 가운데 정렬 */
+    .stDataFrame table,
+    .stDataFrame th,
+    .stDataFrame td,
+    [data-testid="stTable"] th,
+    [data-testid="stTable"] td {
         text-align: center !important;
+        vertical-align: middle !important;
     }
 
-    /* 🔲 결과 표 테두리선을 짙고 명확한 색상(#495057)으로 강조 */
-    .stDataFrame div[data-testid="stTable"] td, 
-    .stDataFrame div[data-testid="stTable"] th,
-    [data-testid="stDataFrame"] td,
-    [data-testid="stDataFrame"] th,
-    div[data-testid="stTable"] {
-        border: 1px solid #495057 !important;
+    /* 🔲 결과 표 테두리선을 아주 진하고 선명한 검은색(#000000)으로 강제 적용 */
+    .stDataFrame table,
+    .stDataFrame th,
+    .stDataFrame td,
+    div[data-testid="stTable"] table,
+    div[data-testid="stTable"] th,
+    div[data-testid="stTable"] td {
+        border: 1.5px solid #000000 !important;
     }
     </style>
     """,
@@ -110,7 +120,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_speed_master_editor_v2"
+    key="liberit_speed_master_final"
 )
 st.session_state.member_df = edited_df
 
@@ -209,6 +219,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         'font-weight': 'normal'
                     })
                     
+                    # 제목 헤더와 본문 텍스트 모두 정중앙 정렬 세팅 추가
                     st.dataframe(
                         styled_table, 
                         use_container_width=True, 
