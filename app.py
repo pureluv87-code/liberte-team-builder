@@ -27,23 +27,34 @@ num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 
+# 💡 [신규 기능]: 전체 체크 및 전체 해제 버튼 기능 구현
+btn_col1, btn_col2 = st.sidebar.columns(2)
+with btn_col1:
+    if st.button("✅ 전체 선택", use_container_width=True):
+        st.session_state.member_df["참석"] = True
+        st.rerun()
+with btn_col2:
+    if st.button("⬜ 전체 해제", use_container_width=True):
+        st.session_state.member_df["참석"] = False
+        st.rerun()
+
 sidebar_column_config = {
     "참석": st.column_config.CheckboxColumn("참석", width="small", default=True),
     "이름": st.column_config.TextColumn("이름", width="medium", required=True),
     "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
 }
 
-# 💡 [핵심 버그 수정]: 대형 명단도 끊김 없이 실시간 클릭이 가능하도록 편집 창을 구성합니다.
+# 고속 렌더링 편집 창
 edited_df = st.sidebar.data_editor(
     st.session_state.member_df, 
     num_rows="fixed", 
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberte_speed_master_editor" # 완전히 새로 분리된 고속 렌더링 키
+    key="liberte_speed_master_editor"
 )
 
-# 회원 추가/삭제 버튼도 즉시 반응하도록 보완
+# 회원 추가/삭제 버튼
 col1, col2 = st.sidebar.columns(2)
 with col1:
     if st.button("➕ 회원 추가", use_container_width=True):
@@ -60,9 +71,7 @@ st.sidebar.markdown("---")
 st.sidebar.write("💡 **안내:** 결과 화면에는 테이블별 조편성과 통합 에버리지만 표기됩니다.")
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
-# 이제 버튼을 누르는 순간 최신 편집본을 딱 한 번 동기화하여 완벽한 속도로 작동합니다.
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
-    # 버튼 클릭 시점에만 무거운 데이터 세션 연산을 수행하므로 평소 클릭 렉이 제로가 됩니다.
     st.session_state.member_df = edited_df
     
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
@@ -76,7 +85,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     else:
         try:
             with st.spinner("🎳 Liberte 최적의 레인 조합을 계산하는 중... 잠시만 기다려주세요."):
-                time.sleep(0.5) # 로딩도 지루하지 않게 0.5초로 대폭 단축!
+                time.sleep(2)
                 
                 teams = [[] for _ in range(num_teams)]
                 bottom_players = players.tail(num_teams).sample(frac=1).reset_index(drop=True)
