@@ -98,7 +98,7 @@ st.sidebar.header("⚙️ 정기전 설정")
 num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("👥 당일 참석자 명단 편집")
+st.sidebar.subheader("👥 당일 참석자 명단 편집 (칠텐 6/24 기준 Avg)")
 
 # 전체 선택/해제 버튼 (세션에 반영 후 리런)
 btn_col1, btn_col2 = st.sidebar.columns(2)
