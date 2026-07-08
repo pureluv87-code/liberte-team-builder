@@ -7,14 +7,42 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 사이드바 내부 표의 간격과 글자 크기 촘촘하게 조절
+# 💡 [핵심 수정]: 사이드바 배경색을 진하게 만들고 결과 표의 테두리선을 선명하게 만드는 CSS 주입
 st.markdown(
     """
     <style>
+    /* ⬅️ 왼쪽 사이드바 메뉴창 배경색을 진한 회색(#dee2e6)으로 변경 */
+    [data-testid="stSidebar"] {
+        background-color: #dee2e6 !important;
+    }
+    
+    /* 사이드바 내부 타이틀 글자색 등이 묻히지 않도록 조정 */
+    [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] p {
+        color: #111111 !important;
+    }
+
+    /* 사이드바 내부 표의 간격과 글자 크기 촘촘하게 조절 */
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th {
         padding: 2px 4px !important;
         font-size: 13px !important;
+    }
+    
+    /* 🎯 메인 결과 표 내부의 텍스트(이름)들을 완벽하게 가운데 정렬 */
+    .stDataFrame div[data-testid="stTable"] td,
+    .stDataFrame div[data-testid="stTable"] th,
+    [data-testid="stDataFrame"] td,
+    [data-testid="stDataFrame"] th {
+        text-align: center !important;
+    }
+
+    /* 🔲 결과 표 테두리선을 짙고 명확한 색상(#495057)으로 강조 */
+    .stDataFrame div[data-testid="stTable"] td, 
+    .stDataFrame div[data-testid="stTable"] th,
+    [data-testid="stDataFrame"] td,
+    [data-testid="stDataFrame"] th,
+    div[data-testid="stTable"] {
+        border: 1px solid #495057 !important;
     }
     </style>
     """,
@@ -82,7 +110,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberte_speed_master_editor"
+    key="liberit_speed_master_editor_v2"
 )
 st.session_state.member_df = edited_df
 
@@ -175,15 +203,12 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
-                    # 💡 [핵심 수정]: 판다스 자체 데이터프레임 속성에 직접 가운데 정렬과 어두운 회색 배경을 주입합니다.
                     styled_table = combined_table.style.set_properties(**{
-                        'background-color': '#ced4da',  # 한 단계 더 어둡고 묵직해진 배경색
-                        'color': '#111111',             # 선명한 검은색 글자
-                        'font-weight': 'normal',        # 기본 두께 유지
-                        'text-align': 'center'          # 판다스 자체 셀 텍스트 강제 가운데 정렬
+                        'background-color': '#ced4da',  
+                        'color': '#111111',             
+                        'font-weight': 'normal'
                     })
                     
-                    # 데이터프레임을 화면에 렌더링할 때도 열 설정을 통해 정렬을 확실히 고정합니다.
                     st.dataframe(
                         styled_table, 
                         use_container_width=True, 
