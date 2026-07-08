@@ -1,15 +1,7 @@
-import sys
-import streamlit.web.cli as stcli
 import streamlit as st
 import pandas as pd
 import numpy as np
 import time
-
-# [배포 안정성 확보] 
-if __name__ == "__main__":
-    if len(sys.argv) == 1 or sys.argv[1] != "run":
-        sys.argv = ["streamlit", "run", sys.argv[0]]
-        sys.exit(stcli.main())
 
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
@@ -18,7 +10,7 @@ st.write("왼쪽 사이드바에서 당일 참석자를 체크하고 버튼을 �
 
 st.markdown("---")
 
-# 2. 서버 전용 회원 명단 시스템 (구조 안정화)
+# 2. 초기 원본 명단 고정
 if "member_df" not in st.session_state:
     initial_data = {
         "참석": [True] * 31,
@@ -35,20 +27,21 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 st.sidebar.write("오늘 온 회원들을 체크해 주세요.")
 
-# 사이드바 전용 컬럼 너비 콤팩트 설정
 sidebar_column_config = {
     "참석": st.column_config.CheckboxColumn("참석", width="small", default=True),
-    "이름": st.column_config.TextColumn("이름", width="small", required=True),
+    "이름": st.column_config.TextColumn("이름", width="medium", required=True),
     "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
 }
 
-# [에러 해결] 복잡한 컬럼 지정 방식을 빼고 안전하게 데이터 전체를 넣어 표를 엽니다.
+# [수정] selection_mode="none"을 추가하여 맨 왼쪽의 불필요한 기본 체크박스(행 선택) 열을 완전히 비활성화합니다.
 edited_df = st.sidebar.data_editor(
-    st.session_state.member_df, 
+    st.session_state.member_df[["참석", "이름", "에버리지"]], 
     num_rows="dynamic", 
     use_container_width=True,
     column_config=sidebar_column_config,
-    hide_index=True
+    hide_index=True,
+    selection_mode="none",  # 기본 제공 행 선택 체크박스를 보이지 않게 숨김
+    key="liberte_editor_final_fixed"
 )
 st.session_state.member_df = edited_df
 
@@ -58,7 +51,6 @@ st.sidebar.write("결과 화면에는 테이블 하단에 통합 에버리지만
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
-    
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     players = players.sort_values(by="에버리지", ascending=False).reset_index(drop=True)
@@ -68,57 +60,60 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     if total_players < num_teams:
         st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다. 왼쪽 메뉴에서 테이블 수를 줄이거나 참석 인원을 더 체크해 주세요.")
     else:
-        with st.spinner("🎳 Liberte 최적의 레인 조합을 계산하는 중... 잠시만 기다려주세요."):
-            time.sleep(1.5)
-            
-            teams = [[] for _ in range(num_teams)]
-            bottom_players = players.tail(num_teams).sample(frac=1).reset_index(drop=True)
-            remaining_players = players.head(total_players - num_teams).copy()
-            
-            shuffled_remaining = []
-            for i in range(0, len(remaining_players), num_teams):
-                chunk = remaining_players.iloc[i:i+num_teams].sample(frac=1)
-                shuffled_remaining.append(chunk)
-            remaining_players = pd.concat(shuffled_remaining).reset_index(drop=True)
-            
-            for i in range(num_teams):
-                teams[i].append((bottom_players.loc[i, "이름"], bottom_players.loc[i, "에버리지"]))
+        try:
+            with st.spinner("🎳 Liberte 최적의 레인 조합을 계산하는 중... 잠시만 기다려주세요."):
+                time.sleep(1.2)
                 
-            for idx, row in remaining_players.iterrows():
-                turn = idx // num_teams
-                step = idx % num_teams
-                if turn % 2 == 0:
-                    team_idx = step
-                else:
-                    team_idx = num_teams - 1 - step
-                teams[team_idx].append((row["이름"], row["average"] if "average" in row else row["에버리지"]))
+                teams = [[] for _ in range(num_teams)]
+                bottom_players = players.tail(num_teams).sample(frac=1).reset_index(drop=True)
+                remaining_players = players.head(total_players - num_teams).copy()
                 
-        st.success(f"📊 배정 완료: 오늘 총 **{total_players}명** 참석 ➡️ **{num_teams}개 테이블** 배치 완료")
-        
-        # 결과 화면 표 간격 고정 배정
-        table_cols = st.columns([1] * num_teams)
-        
-        for i in range(num_teams):
-            with table_cols[i]:
-                st.markdown(f"### 🏟️ {i+1}번 테이블")
-                current_team_df = pd.DataFrame(teams[i], columns=["이름", "에버리지"]).sort_values(by="에버리지", ascending=False).reset_index(drop=True)
-                total_avg = current_team_df["에버리지"].mean()
+                shuffled_remaining = []
+                for i in range(0, len(remaining_players), num_teams):
+                    chunk = remaining_players.iloc[i:i+num_teams].sample(frac=1)
+                    shuffled_remaining.append(chunk)
+                remaining_players = pd.concat(shuffled_remaining).reset_index(drop=True)
                 
-                left_lane = []
-                right_lane = []
-                for idx, row in current_team_df.iterrows():
-                    if idx % 2 == 0:
-                        left_lane.append(row["이름"])
+                for i in range(num_teams):
+                    teams[i].append((bottom_players.loc[i, "이름"], bottom_players.loc[i, "에버리지"]))
+                    
+                for idx, row in remaining_players.iterrows():
+                    turn = idx // num_teams
+                    step = idx % num_teams
+                    if turn % 2 == 0:
+                        team_idx = step
                     else:
-                        right_lane.append(row["이름"])
-                
-                max_len = max(len(left_lane), len(right_lane))
-                while len(left_lane) < max_len: left_lane.append("")
-                while len(right_lane) < max_len: right_lane.append("")
-                
-                combined_table = pd.DataFrame({
-                    "⬅️ 좌측 레인": left_lane,
-                    "➡️ 우측 레인": right_lane
-                })
-                st.dataframe(combined_table, use_container_width=True, hide_index=True)
-                st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
+                        team_idx = num_teams - 1 - step
+                    
+                    teams[team_idx].append((row["이름"], row["에버리지"]))
+                    
+            st.success(f"📊 배정 완료: 오늘 총 **{total_players}명** 참석 ➡️ **{num_teams}개 테이블** 배치 완료")
+            
+            table_cols = st.columns([1] * num_teams)
+            for i in range(num_teams):
+                with table_cols[i]:
+                    st.markdown(f"### 🏟️ {i+1}번 테이블")
+                    current_team_df = pd.DataFrame(teams[i], columns=["이름", "에버리지"]).sort_values(by="에버리지", ascending=False).reset_index(drop=True)
+                    total_avg = current_team_df["에버리지"].mean()
+                    
+                    left_lane = []
+                    right_lane = []
+                    for idx, row in current_team_df.iterrows():
+                        if idx % 2 == 0:
+                            left_lane.append(row["이름"])
+                        else:
+                            right_lane.append(row["이름"])
+                    
+                    max_len = max(len(left_lane), len(right_lane))
+                    while len(left_lane) < max_len: left_lane.append("")
+                    while len(right_lane) < max_len: right_lane.append("")
+                    
+                    combined_table = pd.DataFrame({
+                        "⬅️ 좌측 레인": left_lane,
+                        "➡️ 우측 레인": right_lane
+                    })
+                    st.dataframe(combined_table, use_container_width=True, hide_index=True)
+                    st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
+                    
+        except Exception as e:
+            st.error(f"❌ 팀 구성 도중 알 수 없는 에러가 발생했습니다: {e}")
