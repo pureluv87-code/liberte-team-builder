@@ -5,6 +5,21 @@ import time
 
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
+
+# 💡 [신규 스타일 추가]: 사이드바 내부 표의 간격과 글자 크기를 더 촘촘하게 강제 조정합니다.
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
+    [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th {
+        padding: 2px 4px !important;
+        font-size: 13px !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("🎳 Liberte 정기전 레인별 팀 빌더")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 조가 편성됩니다.")
 
@@ -27,7 +42,7 @@ num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 
-# 💡 [신규 기능]: 전체 체크 및 전체 해제 버튼 기능 구현
+# 전체 선택/해제 버튼
 btn_col1, btn_col2 = st.sidebar.columns(2)
 with btn_col1:
     if st.button("✅ 전체 선택", use_container_width=True):
@@ -38,13 +53,14 @@ with btn_col2:
         st.session_state.member_df["참석"] = False
         st.rerun()
 
+# 💡 [핵심 수정]: 각 열의 너비를 최소화하여 스크롤바가 안 생기도록 고정합니다.
 sidebar_column_config = {
-    "참석": st.column_config.CheckboxColumn("참석", width="small", default=True),
-    "이름": st.column_config.TextColumn("이름", width="medium", required=True),
-    "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
+    "참석": st.column_config.CheckboxColumn("참석", width=45, default=True),
+    "이름": st.column_config.TextColumn("이름", width=80, required=True),
+    "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# 고속 렌더링 편집 창
+# 고속 렌더링 편집 창 (use_container_width=True를 유지하되 내부 지정 너비로 압축)
 edited_df = st.sidebar.data_editor(
     st.session_state.member_df, 
     num_rows="fixed", 
@@ -85,7 +101,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     else:
         try:
             with st.spinner("🎳 Liberte 최적의 레인 조합을 계산하는 중... 잠시만 기다려주세요."):
-                time.sleep(2)
+                time.sleep(0.5)
                 
                 teams = [[] for _ in range(num_teams)]
                 bottom_players = players.tail(num_teams).sample(frac=1).reset_index(drop=True)
