@@ -7,10 +7,11 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# [전체 레이아웃 및 사이드바 테마 강제 고정 CSS]
+# 💡 [전체 레이아웃 및 사이드바 테마 강제 고정 CSS]
 st.markdown(
     """
     <style>
+    /* 0️⃣ 최상단 헤더 및 메뉴바 영역 완전 검은색 고정 */
     header[data-testid="stHeader"], 
     [data-testid="stHeader"] *,
     div[data-testid="stToolbar"],
@@ -18,6 +19,8 @@ st.markdown(
         background-color: #000000 !important;
         color: #ffffff !important;
     }
+    
+    /* 1️⃣ 앱 전체 배경을 완전한 검은색(#000000)으로 강제 고정 */
     .stApp {
         background-color: #000000 !important;
         color: #ffffff !important;
@@ -25,15 +28,20 @@ st.markdown(
     h1, h2, h3, h4, h5, h6, p, span {
         color: #ffffff !important;
     }
+
+    /* 2️⃣ 왼쪽 사이드바 영역 배경색 및 내부 글자 고정 */
     [data-testid="stSidebar"], 
     [data-testid="stSidebarContent"], 
     section[data-sidebar="true"] > div {
         background-color: #111214 !important;
     }
+    
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, 
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span {
         color: #ffffff !important;
     }
+
+    /* 사이드바 버튼 스타일 고정 */
     [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
     [data-testid="stSidebar"] button p {
         color: #ffffff !important;
@@ -42,6 +50,8 @@ st.markdown(
         background-color: #2b2d31 !important;
         border: 1px solid #4e5058 !important;
     }
+
+    /* 사이드바 참석 명단 표 스타일 */
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th,
     [data-testid="stSidebar"] [data-testid="stDataFrame"] td,
@@ -51,6 +61,8 @@ st.markdown(
         color: #ffffff !important;
         background-color: #1a1c1e !important;
     }
+    
+    /* 3️⃣ 에버리지 수치 영역 라벨색 고정 */
     [data-testid="stMetricLabel"] { color: #aaaaaa !important; }
     [data-testid="stMetricValue"] { color: #ffffff !important; }
     </style>
@@ -81,10 +93,6 @@ if "member_df" not in st.session_state:
     }
     st.session_state.member_df = pd.DataFrame(RAW_DATA)
 
-# 에디터 고유 식별 번호 관리 (전체 선택/해제 시 인위적인 컴포넌트 재생성 유도)
-if "editor_version" not in st.session_state:
-    st.session_state.editor_version = 0
-
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
 num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
@@ -92,17 +100,15 @@ num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 
-# 🎯 [버그 해결]: 버전 카운트를 올려 에디터 자체를 완전 리프레시하여 이전 마우스 조작 캐시를 날립니다.
+# 전체 선택/해제 버튼 (세션에 반영 후 리런)
 btn_col1, btn_col2 = st.sidebar.columns(2)
 with btn_col1:
     if st.button("✅ 전체 선택", use_container_width=True):
         st.session_state.member_df["참석"] = True
-        st.session_state.editor_version += 1  # 강제 상태 갱신 트리거
         st.rerun()
 with btn_col2:
     if st.button("⬜ 전체 해제", use_container_width=True):
         st.session_state.member_df["참석"] = False
-        st.session_state.editor_version += 1  # 강제 상태 갱신 트리거
         st.rerun()
 
 sidebar_column_config = {
@@ -111,40 +117,39 @@ sidebar_column_config = {
     "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# 동적 key 발급으로 버퍼 꼬임 차단
-editor_key = f"builder_editor_v_{st.session_state.editor_version}"
-
+# 🎯 [핵심 변경 1]: 온체인지 콜백과 Form을 모두 제거하고, 순수하게 세션 데이터 보관만 진행
+# 사용자가 수정하는 데이터는 실시간 새로고침 없이 브라우저 단에서 엄청나게 빠르게 토글됩니다.
 edited_df = st.sidebar.data_editor(
     st.session_state.member_df, 
     num_rows="fixed", 
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key=editor_key
+    key="direct_team_builder_editor"
 )
-
-# 💡 실시간 브라우저 단 변경 내역을 세션 데이터에 동기화
-st.session_state.member_df = edited_df
 
 # 회원 추가/삭제 버튼
 col1, col2 = st.sidebar.columns(2)
 with col1:
     if st.button("➕ 회원 추가", use_container_width=True):
+        st.session_state.member_df = edited_df  # 추가 전 현재 체크 상태 보존
         new_row = pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150}])
         st.session_state.member_df = pd.concat([st.session_state.member_df, new_row], ignore_index=True)
-        st.session_state.editor_version += 1
         st.rerun()
 with col2:
     if st.button("❌ 맨 아래 삭제", use_container_width=True):
         if len(edited_df) > 0:
             st.session_state.member_df = edited_df.drop(edited_df.index[-1]).reset_index(drop=True)
-            st.session_state.editor_version += 1  # 🛠️ [오타 수정 완료]: st.session_width -> session_state
             st.rerun()
 
 st.sidebar.markdown("---")
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
+    # 🎯 [핵심 변경 2]: 버튼을 클릭한 '바로 그 순간' 에디터에 쌓여있던 최종 메모리 데이터(edited_df)를 그대로 낚아챕니다!
+    # 이 덕분에 임시 저장 버튼을 누를 필요가 전혀 없어집니다.
+    st.session_state.member_df = edited_df
+    
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     
