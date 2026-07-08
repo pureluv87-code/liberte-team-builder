@@ -6,26 +6,14 @@ import time
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 💡 [스타일 추가]: 눈부심 방지를 위해 사이드바 압축 및 메인 결과 표에 든든한 배경색을 부여합니다.
+# 사이드바 내부 표의 간격과 글자 크기 촘촘하게 조절
 st.markdown(
     """
     <style>
-    /* 사이드바 내부 표 간격 촘촘하게 */
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th {
         padding: 2px 4px !important;
         font-size: 13px !important;
-    }
-    
-    /* 🎯 메인 화면 결과 표 눈부심 방지용 배경색 및 스타일 지정 */
-    [data-testid="stMainBlockContainer"] .stDataFrame div[data-testid="stTable"] {
-        background-color: #f8f9fa !important; /* 은은한 연회색 배경 */
-        border-radius: 8px !important;
-        border: 1px solid #e9ecef !important;
-    }
-    [data-testid="stMainBlockContainer"] .stDataFrame div[data-testid="stTable"] td {
-        font-weight: 500 !important;
-        color: #212529 !important; /* 글자를 선명하고 진하게 */
     }
     </style>
     """,
@@ -44,7 +32,7 @@ RAW_DATA = {
     "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
 }
 
-# [정렬 보완] 앱 구동 시 참석 여부(내림차순) -> 에버리지(내림차순)로 초기 정렬 고정
+# 앱 구동 시 참석 여부(내림차순) -> 에버리지(내림차순)로 초기 정렬 고정
 if "member_df" not in st.session_state:
     initial_df = pd.DataFrame(RAW_DATA)
     st.session_state.member_df = initial_df.sort_values(by=["참석", "에버리지"], ascending=[False, False]).reset_index(drop=True)
@@ -74,7 +62,7 @@ sidebar_column_config = {
     "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# [정렬 보완] 실시간 화면 갱신 전 참석 상태 정렬 우선권 부여
+# 실시간 화면 갱신 전 참석 상태 정렬 우선권 부여
 current_df = st.session_state.member_df.sort_values(by=["참석", "에버리지"], ascending=[False, False]).reset_index(drop=True)
 
 edited_df = st.sidebar.data_editor(
@@ -118,12 +106,12 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     else:
         try:
             with st.spinner("🎳 Liberte 최적의 황금 밸런스 조합을 계산하는 중..."):
-                time.sleep(1.5) # 연산 딜레이를 체감상 가장 쾌적한 1.5초로 세팅
+                time.sleep(1.5)
                 
                 best_teams = None
                 best_diff = 999.0
                 
-                # 최대 5000번 최적의 조합 시뮬레이션 (5점 이하 밸런스 핏 확보)
+                # 최대 5000번 최적의 조합 시뮬레이션
                 for _ in range(5000):
                     shuffled_players = players.sample(frac=1).reset_index(drop=True)
                     
@@ -156,7 +144,6 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                 with table_cols[i]:
                     st.markdown(f"### 🏟️ {i+1}번 테이블")
                     
-                    # 팀 내 순서 무작위 셔플 (하위권 고정 방지)
                     current_team_df = pd.DataFrame(teams[i], columns=["이름", "에버리지"]).sample(frac=1).reset_index(drop=True)
                     total_avg = current_team_df["에버리지"].mean()
                     
@@ -176,7 +163,16 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "⬅️ 좌측 레인": left_lane,
                         "➡️ 우측 레인": right_lane
                     })
-                    st.dataframe(combined_table, use_container_width=True, hide_index=True)
+                    
+                    # 💡 [핵심 수정]: 판다스 스타일 기능을 사용하여 표 내부에 은은한 연회색 배경색과 진한 글자색을 확실하게 주입합니다.
+                    styled_table = combined_table.style.set_properties(**{
+                        'background-color': '#f1f3f5',  # 은은하고 편안한 배경색 (눈부심 방지)
+                        'color': '#111111',             # 선명하고 진한 글자색
+                        'font-weight': 'bold'           # 글자 두껍게
+                    })
+                    
+                    # 스타일이 적용된 객체를 화면에 출력합니다.
+                    st.dataframe(styled_table, use_container_width=True, hide_index=True)
                     st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
         except Exception as e:
