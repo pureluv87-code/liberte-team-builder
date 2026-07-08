@@ -7,10 +7,19 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 💡 [모든 모드 완벽 방어 CSS]: config.toml 없이 코드로만 버튼 및 데이터 표 색상을 강제 고정합니다.
+# 💡 [최종 치트키 CSS]: 상단 메뉴바(Share 및 삼선 메뉴)를 포함한 앱 전체를 완벽한 다크 모드로 강제 고정
 st.markdown(
     """
     <style>
+    /* 0️⃣ [핵심 추가] 최상단 헤더 및 메뉴바 영역 다크 모드 강제 고정 */
+    header[data-testid="stHeader"], 
+    [data-testid="stHeader"] *,
+    div[data-testid="stToolbar"],
+    .stAppDeployButton {
+        background-color: #1a1c1e !important;
+        color: #ffffff !important;
+    }
+    
     /* 1️⃣ 앱 전체 배경 및 기본 글자색 고정 (다크 스타일) */
     .stApp {
         background-color: #1a1c1e !important;
@@ -33,7 +42,7 @@ st.markdown(
         color: #ffffff !important;
     }
 
-    /* 🎯 [버그 수정]: 라이트 모드에서 안 보였던 사이드바 버튼(전체 선택/해제 등) 글자색 강제 고정 */
+    /* 라이트 모드에서 안 보였던 사이드바 버튼(전체 선택/해제 등) 글자색 강제 고정 */
     [data-testid="stSidebar"] button[data-testid="baseButton-secondary"] p,
     [data-testid="stSidebar"] button p {
         color: #ffffff !important;
@@ -43,7 +52,7 @@ st.markdown(
         border: 1px solid #4e5058 !important;
     }
 
-    /* 🎯 [버그 수정]: 사이드바 참석 인원 편집 표 내부 글자 및 체크박스 색상 완전 방어 */
+    /* 사이드바 참석 인원 편집 표 내부 글자 및 체크박스 색상 완전 방어 */
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th,
     [data-testid="stSidebar"] [data-testid="stDataFrame"] td,
@@ -65,7 +74,7 @@ st.markdown(
         color: #000000 !important; /* 메인 결과 표 안의 이름은 무조건 선명한 검은색 */
     }
 
-    /* 결과 표 테두리선 순도 100% 검은색 두껍게 고정 */
+    /* 결과 표 격자 테두리선 순도 100% 검은색 두껍게 고정 */
     .stDataFrame table,
     .stDataFrame th,
     .stDataFrame td,
@@ -143,7 +152,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_code_only_style_v1"
+    key="liberit_code_only_style_v2"
 )
 st.session_state.member_df = edited_df
 
@@ -235,7 +244,6 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
-                    # 결과 표는 무조건 밝은 회색 바탕에 검은색 텍스트로 가독성 확보
                     styled_table = combined_table.style.set_properties(**{
                         'background-color': '#e9ecef',  
                         'color': '#000000',             
