@@ -85,16 +85,14 @@ st.title("🎳 Liberte 정기전 레인별 팀 빌더")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 조가 편성됩니다.")
 st.markdown("---")
 
-# 2. 초기 원본 명단 고정 (기본 데이터)
-RAW_DATA = {
-    "참석": [True] * 31,
-    "이름": ["김정수", "문상원", "박진원", "박기덕", "이상현", "원종혁", "이준협", "정상현", "강병철", "유현재", "한승오", "최낙민", "안치관", "송미연", "김용태", "김지현", "조인희", "김수진", "김지원", "김민표", "추진", "윤관호", "유명선", "추송", "안호성", "정민영", "김정아", "권혁환", "이도연", "홍소연", "장성민"],
-    "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
-}
-
+# 2. 초기 원본 명단 고정 (기본 데이터 고정 및 정렬방식 단일화)
 if "member_df" not in st.session_state:
-    initial_df = pd.DataFrame(RAW_DATA)
-    st.session_state.member_df = initial_df.sort_values(by=["참석", "에버리지"], ascending=[False, False]).reset_index(drop=True)
+    RAW_DATA = {
+        "참석": [True] * 31,
+        "이름": ["김정수", "문상원", "박진원", "박기덕", "이상현", "원종혁", "이준협", "정상현", "강병철", "유현재", "한승오", "최낙민", "안치관", "송미연", "김용태", "김지현", "조인희", "김수진", "김지원", "김민표", "추진", "윤관호", "유명선", "추송", "안호성", "정민영", "김정아", "권혁환", "이도연", "홍소연", "장성민"],
+        "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
+    }
+    st.session_state.member_df = pd.DataFrame(RAW_DATA)
 
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
@@ -103,7 +101,7 @@ num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 
-# 전체 선택/해제 버튼
+# 전체 선택/해제 버튼 클릭 시 세션에 즉시 반영 후 리런
 btn_col1, btn_col2 = st.sidebar.columns(2)
 with btn_col1:
     if st.button("✅ 전체 선택", use_container_width=True):
@@ -114,24 +112,24 @@ with btn_col2:
         st.session_state.member_df["참석"] = False
         st.rerun()
 
-# 열 너비 촘촘하게 세팅
+# 열 너비 세팅
 sidebar_column_config = {
     "참석": st.column_config.CheckboxColumn("참석", width=45, default=True),
     "이름": st.column_config.TextColumn("이름", width=80, required=True),
     "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# 실시간 화면 갱신 전 참석 상태 정렬 우선권 부여
-current_df = st.session_state.member_df.sort_values(by=["참석", "에버리지"], ascending=[False, False]).reset_index(drop=True)
-
+# 💡 [핵심 버그 수정]: 무조건 세션 스테이트 고정 상수를 key로 연동하여 실시간 데이터 유실을 차단합니다.
 edited_df = st.sidebar.data_editor(
-    current_df, 
+    st.session_state.member_df, 
     num_rows="fixed", 
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_code_style_html_fixed_v5"
+    key="stable_member_editor_v6"
 )
+
+# 사용자가 마우스로 편집한 결과물은 즉시 세션 보관함에 연동시킵니다.
 st.session_state.member_df = edited_df
 
 # 회원 추가/삭제 버튼
@@ -140,12 +138,11 @@ with col1:
     if st.button("➕ 회원 추가", use_container_width=True):
         new_row = pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150}])
         st.session_state.member_df = pd.concat([st.session_state.member_df, new_row], ignore_index=True)
-        st.session_state.member_df = st.session_state.member_df.sort_values(by=["참석", "에버리지"], ascending=[False, False]).reset_index(drop=True)
         st.rerun()
 with col2:
     if st.button("❌ 맨 아래 삭제", use_container_width=True):
         if len(st.session_state.member_df) > 0:
-            st.session_state.member_df = st.session_state.member_df.drop(st.session_state.member_df.index[-1])
+            st.session_state.member_df = st.session_state.member_df.drop(st.session_state.member_df.index[-1]).reset_index(drop=True)
             st.rerun()
 
 st.sidebar.markdown("---")
@@ -153,9 +150,9 @@ st.sidebar.write("💡 **안내:** 결과 화면에는 테이블별 조편성과
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
-    st.session_state.member_df = edited_df
-    
-    players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
+    # 버튼을 누른 최종 시점의 저장된 명단을 완벽하게 가져와서 필터링합니다.
+    final_df = st.session_state.member_df
+    players = final_df[final_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     
     total_players = len(players)
@@ -217,7 +214,6 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     while len(left_lane) < max_len: left_lane.append("")
                     while len(right_lane) < max_len: right_lane.append("")
                     
-                    # 깔끔한 UI 레이아웃 구성
                     html_table = f"""
                     <div style="padding: 2px; background-color: #000000;">
                         <table style="width:100%; border-collapse:collapse; border:3px solid #000000; text-align:center; vertical-align:middle; background-color:#e9ecef; font-family:sans-serif; font-size:15px;">
@@ -244,9 +240,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     </div>
                     """
                     
-                    # 🎯 [수정]: 오타난 인자 'scroller'를 올바른 'scrolling=False'로 변경하여 에러 완벽 해결
                     st.components.v1.html(html_table, height=(max_len * 42) + 55, scrolling=False)
-                    
                     st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
         except Exception as e:
