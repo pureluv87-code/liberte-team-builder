@@ -178,7 +178,6 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
             
             teams = best_teams
             st.info(f"📊 **오늘 총 참석 인원:** {total_players}명 | 🏟️ **배정 테이블 수:** {num_teams}개")
-            st.success(f"✅ 팀 구성 완료! (테이블 간 에버 차이: {best_diff:.1f}점)")
             
             table_cols = st.columns([1] * num_teams)
             for i in range(num_teams):
