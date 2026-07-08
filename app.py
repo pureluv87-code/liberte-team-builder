@@ -96,8 +96,6 @@ if "member_df" not in st.session_state:
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
 num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
-# [추가됨] 토글 버튼
-show_avg = st.sidebar.toggle("📊 통합 에버리지 수치 보기", value=True)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집 (칠텐 7/8 기준 에버)")
@@ -241,10 +239,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     """
                     
                     st.components.v1.html(html_table, height=(max_len * 42) + 55, scrolling=False)
-                    # [추가됨] 토글이 켜져 있을 때만 에버리지 출력
-                    if show_avg:
-                        st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
-
+                    st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
         except Exception as e:
             st.error(f"❌ 팀 구성 도중 알 수 없는 에러가 발생했습니다: {e}")
