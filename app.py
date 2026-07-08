@@ -7,7 +7,7 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 사이드바 내부 표의 간격과 글자 크기 촘촘하게 조절
+# 사이드바 내부 표의 간격 조절 및 💡 [추가] 통합 에버리지(Metric) 영역을 가운데 정렬하는 CSS 지정을 포함합니다.
 st.markdown(
     """
     <style>
@@ -16,16 +16,23 @@ st.markdown(
         padding: 2px 4px !important;
         font-size: 13px !important;
     }
+    
+    /* 🎯 메인 화면의 모든 st.metric(통합 에버리지) 요소를 강제로 가운데 정렬 */
+    [data-testid="stMetric"] {
+        text-align: center !important;
+    }
+    [data-testid="stMetric"] div {
+        justify-content: center !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
 
-# 💡 [버그 수정]: 깨진 이미지 흔적(HTML 태그)을 완벽히 제거하고 Streamlit 컬럼 레이아웃으로만 중앙 정렬합니다.
+# 로고 이미지 배치 (화면 가로 기준 정중앙)
 IMAGE_NAME = "logo.jpg"  # 파일 확장자가 png라면 "logo.png"로 변경해주세요.
 
 if os.path.exists(IMAGE_NAME):
-    # 화면을 1:2:1 비율로 쪼개어 가운데(center_col)에만 이미지를 넣음으로써 완벽하게 정중앙에 정렬합니다.
     _, center_col, _ = st.columns([1, 2, 1])
     with center_col:
         st.image(IMAGE_NAME, use_container_width=True)
@@ -176,10 +183,12 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
+                    # 💡 [핵심 수정]: 'text-align': 'center' 속성을 추가하여 표 내부 글자들을 가운데 정렬합니다.
                     styled_table = combined_table.style.set_properties(**{
                         'background-color': '#e2e6ea',  
                         'color': '#111111',             
-                        'font-weight': 'normal'         
+                        'font-weight': 'normal',
+                        'text-align': 'center'          # 셀 내부 텍스트 가운데 정렬
                     })
                     
                     st.dataframe(styled_table, use_container_width=True, hide_index=True)
