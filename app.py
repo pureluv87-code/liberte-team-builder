@@ -151,6 +151,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
         st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다.")
     else:
         with st.spinner("🎳 Liberte 최적의 황금 밸런스 조합을 계산하는 중..."):
+            time.sleep(2)
             best_teams = None
             best_diff = 999.0
             
