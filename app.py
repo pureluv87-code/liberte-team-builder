@@ -10,20 +10,19 @@ st.write("왼쪽 사이드바에서 당일 참석자를 체크하고 버튼을 �
 
 st.markdown("---")
 
-# 2. 초기 원본 명단 고정
-RAW_MEMBERS = {
-    "이름": ["김정수", "문상원", "박진원", "박기덕", "이상현", "원종혁", "이준협", "정상현", "강병철", "유현재", "한승오", "최낙민", "안치관", "송미연", "김용태", "김지현", "조인희", "김수진", "김지원", "김민표", "추진", "윤관호", "유명선", "추송", "안호성", "정민영", "김정아", "권혁환", "이도연", "홍소연", "장성민"],
-    "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
-}
-
+# 2. 초기 원본 명단 고정 (구조 단순화)
 if "member_df" not in st.session_state:
-    df_init = pd.DataFrame(RAW_MEMBERS)
-    df_init.insert(0, "참석", True)
-    st.session_state.member_df = df_init
+    # 처음부터 '참석' 열을 내장 데이터로 깔끔하게 한 번만 포함시킵니다.
+    initial_data = {
+        "참석": [True] * 31,
+        "이름": ["김정수", "문상원", "박진원", "박기덕", "이상현", "원종혁", "이준협", "정상현", "강병철", "유현재", "한승오", "최낙민", "안치관", "송미연", "김용태", "김지현", "조인희", "김수진", "김지원", "김민표", "추진", "윤관호", "유명선", "추송", "안호성", "정민영", "김정아", "권혁환", "이도연", "홍소연", "장성민"],
+        "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
+    }
+    st.session_state.member_df = pd.DataFrame(initial_data)
 
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
-num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=6, value=4)
+num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
@@ -35,13 +34,14 @@ sidebar_column_config = {
     "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
 }
 
+# 중복 방지를 위해 기존 컬럼 순서를 정확히 명시해서 표를 띄웁니다.
 edited_df = st.sidebar.data_editor(
-    st.session_state.member_df, 
+    st.session_state.member_df[["참석", "이름", "에버리지"]], 
     num_rows="dynamic", 
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberte_editor_v2"
+    key="liberte_editor_final"
 )
 st.session_state.member_df = edited_df
 
