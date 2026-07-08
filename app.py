@@ -241,7 +241,10 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     """
                     
                     st.components.v1.html(html_table, height=(max_len * 42) + 55, scrolling=False)
-                    st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
+                    # [추가됨] 토글이 켜져 있을 때만 에버리지 출력
+                    if show_avg:
+                        st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
+
                     
         except Exception as e:
             st.error(f"❌ 팀 구성 도중 알 수 없는 에러가 발생했습니다: {e}")
