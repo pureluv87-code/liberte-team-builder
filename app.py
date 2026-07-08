@@ -93,16 +93,6 @@ if "member_df" not in st.session_state:
     }
     st.session_state.member_df = pd.DataFrame(RAW_DATA)
 
-# 💡 [핵심 추가]: 사용자가 체크박스를 건드리는 순간 딜레이 없이 즉시 세션으로 강제 동기화하는 콜백 함수
-def update_editor_state():
-    if "realtime_editor_key" in st.session_state:
-        changes = st.session_state["realtime_editor_key"]
-        # 수정된 셀(edited_rows) 실시간 반영
-        if "edited_rows" in changes:
-            for row_idx, changed_cols in changes["edited_rows"].items():
-                for col_name, new_val in changed_cols.items():
-                    st.session_state.member_df.at[row_idx, col_name] = new_val
-
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
 num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
@@ -110,7 +100,7 @@ num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 
-# 전체 선택/해제 버튼
+# 전체 선택/해제 일괄 처리 단추
 btn_col1, btn_col2 = st.sidebar.columns(2)
 with btn_col1:
     if st.button("✅ 전체 선택", use_container_width=True):
@@ -127,16 +117,22 @@ sidebar_column_config = {
     "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# 🎯 data_editor에 on_change 콜백 함수를 걸어 마우스 클릭 즉시 실시간 동기화 트리거
-st.sidebar.data_editor(
-    st.session_state.member_df, 
-    num_rows="fixed", 
-    use_container_width=True,
-    column_config=sidebar_column_config,
-    hide_index=True,
-    key="realtime_editor_key",
-    on_change=update_editor_state
-)
+# 🎯 [핵심 변경]: 편집 창을 전용 Form으로 감싸서 마우스 클릭 시 무한 렌더링(렉) 현상을 원천 차단
+with st.sidebar.form(key="fast_editor_form"):
+    edited_df = st.data_editor(
+        st.session_state.member_df, 
+        num_rows="fixed", 
+        use_container_width=True,
+        column_config=sidebar_column_config,
+        hide_index=True,
+        key="form_editor_data"
+    )
+    
+    # 변경 사항을 세션에 딱 한 번만 밀어넣어 줄 저장 버튼
+    submit_changes = st.form_submit_button("💾 명단 편집 확정", use_container_width=True)
+    if submit_changes:
+        st.session_state.member_df = edited_df
+        st.toast("✅ 명단 변경 사항이 완벽히 기록되었습니다!", icon="💾")
 
 # 회원 추가/삭제 버튼
 col1, col2 = st.sidebar.columns(2)
@@ -152,11 +148,12 @@ with col2:
             st.rerun()
 
 st.sidebar.markdown("---")
-st.sidebar.write("💡 **안내:** 결과 화면에는 테이블별 조편성과 통합 에버리지만 표기됩니다.")
+st.sidebar.write("💡 **이용 팁:** 왼쪽 명단을 고친 후 반드시 `💾 명단 편집 확정` 단추를 먼저 누르고, 메인 화면의 팀 짜기 버튼을 눌러주세요.")
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
-    final_df = st.session_state.member_df
+    # 버튼을 누른 순간 폼 결과 또는 세션 결과의 최종본을 즉시 대입
+    final_df = edited_df if 'edited_df' in locals() else st.session_state.member_df
     players = final_df[final_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     
