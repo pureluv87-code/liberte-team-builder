@@ -23,7 +23,7 @@ if "member_df" not in st.session_state:
 
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
-num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
+num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=6, value=4)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
