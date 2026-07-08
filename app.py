@@ -21,16 +21,27 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 💡 [핵심 수정]: 타이틀보다 로고 이미지를 맨 위로 올렸습니다.
+# 💡 [핵심 수정]: 로고 이미지가 화면 가로 기준 정중앙에 오도록 CSS 마크업을 적용합니다.
 IMAGE_NAME = "logo.jpg"  # 파일 확장자가 png라면 "logo.png"로 변경해주세요.
 
 if os.path.exists(IMAGE_NAME):
-    # 로고가 너무 크면 화면을 다 차지하므로 width=400 정도로 상단에 깔끔하게 배치합니다.
-    st.image(IMAGE_NAME, width=400)
+    # HTML 정렬 태그를 사용하여 이미지를 완벽하게 가운데로 정렬합니다.
+    st.markdown(
+        f"""
+        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
+            <img src="data:image/jpeg;base64" id="club_logo" style="width: 400px; max-width: 100%;">
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    # Streamlit 고유 기능을 활용해 안전하게 가운데 정렬 영역에 이미지를 밀어 넣습니다.
+    _, center_col, _ = st.columns([1, 2, 1])
+    with center_col:
+        st.image(IMAGE_NAME, use_container_width=True)
 else:
     st.caption("💡 최상단 여백용 'logo.jpg' 파일을 app.py와 같은 폴더에 넣어주시면 로고가 표시됩니다.")
 
-# 로고 바로 밑에 타이틀과 기본 안내 문구가 위치합니다.
+# 로고 밑 타이틀과 기본 안내 문구
 st.title("🎳 Liberte 정기전 레인별 팀 빌더")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 조가 편성됩니다.")
 st.markdown("---")
