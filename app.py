@@ -166,8 +166,8 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                 team_averages = [np.mean([p[1] for p in t]) if t else 0 for t in temp_teams]
                 current_diff = max(team_averages) - min(team_averages)
                 
-                # 5점 이하 조합 찾으면 즉시 중단
-                if current_diff <= 5.0:
+                # 4점 이하 조합 찾으면 즉시 중단
+                if current_diff <= 4.0:
                     best_teams = temp_teams
                     best_diff = current_diff
                     break
