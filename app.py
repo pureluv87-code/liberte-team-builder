@@ -106,7 +106,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     else:
         try:
             with st.spinner("🎳 Liberte 최적의 황금 밸런스 조합을 계산하는 중..."):
-                time.sleep(1.5)
+                time.sleep(2)
                 
                 best_teams = None
                 best_diff = 999.0
@@ -164,14 +164,13 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
-                    # 💡 [핵심 수정]: 판다스 스타일 기능을 사용하여 표 내부에 은은한 연회색 배경색과 진한 글자색을 확실하게 주입합니다.
+                    # 💡 [핵심 수정]: 배경색을 더 어두운 회색(#e2e6ea)으로 내리고, font-weight 속성을 완전히 제거하여 기본 두께로 바꿨습니다.
                     styled_table = combined_table.style.set_properties(**{
-                        'background-color': '#f1f3f5',  # 은은하고 편안한 배경색 (눈부심 방지)
-                        'color': '#111111',             # 선명하고 진한 글자색
-                        'font-weight': 'bold'           # 글자 두껍게
+                        'background-color': '#e2e6ea',  # 기존보다 조금 더 차분하고 어두워진 배경색
+                        'color': '#111111',             # 진한 글자색 유지
+                        'font-weight': 'normal'         # 두껍게 효과 해제 (기본 텍스트 두께)
                     })
                     
-                    # 스타일이 적용된 객체를 화면에 출력합니다.
                     st.dataframe(styled_table, use_container_width=True, hide_index=True)
                     st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
