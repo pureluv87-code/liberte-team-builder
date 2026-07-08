@@ -18,37 +18,43 @@ st.write("왼쪽 사이드바에서 당일 참석자를 체크하고 버튼을 �
 
 st.markdown("---")
 
-# 2. 서버 전용 회원 명단 시스템 (구조 안정화)
-if "member_df" not in st.session_state:
-    initial_data = {
-        "참석": [True] * 31,
-        "이름": ["김정수", "문상원", "박진원", "박기덕", "이상현", "원종혁", "이준협", "정상현", "강병철", "유현재", "한승오", "최낙민", "안치관", "송미연", "김용태", "김지현", "조인희", "김수진", "김지원", "김민표", "추진", "윤관호", "유명선", "추송", "안호성", "정민영", "김정아", "권혁환", "이도연", "홍소연", "장성민"],
-        "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
-    }
-    st.session_state.member_df = pd.DataFrame(initial_data)
+# 2. [구조 변경] 초기 원본 명단 고정 (에러 방지용 상수 데이터)
+RAW_MEMBERS = {
+    "이름": ["김정수", "문상원", "박진원", "박기덕", "이상현", "원종혁", "이준협", "정상현", "강병철", "유현재", "한승오", "최낙민", "안치관", "송미연", "김용태", "김지현", "조인희", "김수진", "김지원", "김민표", "추진", "윤관호", "유명선", "추송", "안호성", "정민영", "김정아", "권혁환", "이도연", "홍소연", "장성민"],
+    "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
+}
+
+# 세션 상태가 없거나 꼬였을 때를 대비해 명확하게 기본 데이터프레임 초기화
+if "member_df" not in st.session_state or "참석" not in st.session_state.member_df.columns:
+    df_init = pd.DataFrame(RAW_MEMBERS)
+    df_init.insert(0, "참석", True) # 맨 앞에 '참석' 컬럼을 안전하게 강제 삽입
+    st.session_state.member_df = df_init
 
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
-num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
+
+# 테이블 수 선택 슬라이더
+num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=6, value=3)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
 st.sidebar.write("오늘 온 회원들을 체크해 주세요.")
 
-# 사이드바 전용 컬럼 너비 콤팩트 설정
+# 사이드바 전용 컬럼 너비 및 속성 고정
 sidebar_column_config = {
     "참석": st.column_config.CheckboxColumn("참석", width="small", default=True),
-    "이름": st.column_config.TextColumn("이름", width="small", required=True),
+    "이름": st.column_config.TextColumn("이름", width="medium", required=True),
     "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
 }
 
-# 데이터 편집기 연결
+# 안전하게 세션 상태의 명단을 바인딩하여 편집기 실행
 edited_df = st.sidebar.data_editor(
     st.session_state.member_df, 
     num_rows="dynamic", 
     use_container_width=True,
     column_config=sidebar_column_config,
-    hide_index=True
+    hide_index=True,
+    key="liberte_editor" # 고유 키를 지정해 상태 꼬임 방지
 )
 st.session_state.member_df = edited_df
 
@@ -59,6 +65,7 @@ st.sidebar.write("결과 화면에는 테이블 하단에 통합 에버리지만
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
     
+    # 참석에 체크된 사람들만 골라내기
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     players = players.sort_values(by="에버리지", ascending=False).reset_index(drop=True)
@@ -70,7 +77,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     else:
         try:
             with st.spinner("🎳 Liberte 최적의 레인 조합을 계산하는 중... 잠시만 기다려주세요."):
-                time.sleep(1.2) # 지루하지 않게 로딩 시간은 1.2초로 살짝 줄였습니다.
+                time.sleep(1.2)
                 
                 teams = [[] for _ in range(num_teams)]
                 bottom_players = players.tail(num_teams).sample(frac=1).reset_index(drop=True)
@@ -93,12 +100,11 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     else:
                         team_idx = num_teams - 1 - step
                     
-                    # [버그 해결!] 영문명 'average' 흔적을 완전히 지우고 '에버리지'로 통일했습니다.
                     teams[team_idx].append((row["이름"], row["에버리지"]))
                     
             st.success(f"📊 배정 완료: 오늘 총 **{total_players}명** 참석 ➡️ **{num_teams}개 테이블** 배치 완료")
             
-            # 결과 화면 표 간격 고정 배정
+            # 결과 화면 출력
             table_cols = st.columns([1] * num_teams)
             
             for i in range(num_teams):
