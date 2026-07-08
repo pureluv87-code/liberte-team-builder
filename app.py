@@ -33,15 +33,14 @@ sidebar_column_config = {
     "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
 }
 
-# [수정] selection_mode="none"을 추가하여 맨 왼쪽의 불필요한 기본 체크박스(행 선택) 열을 완전히 비활성화합니다.
+# [에러 해결 및 수정] 문제가 된 selection_mode를 삭제하고, 행 선택 자체를 안 쓰도록 깔끔하게 빌드합니다.
 edited_df = st.sidebar.data_editor(
     st.session_state.member_df[["참석", "이름", "에버리지"]], 
     num_rows="dynamic", 
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    selection_mode="none",  # 기본 제공 행 선택 체크박스를 보이지 않게 숨김
-    key="liberte_editor_final_fixed"
+    key="liberte_editor_final_stable"
 )
 st.session_state.member_df = edited_df
 
