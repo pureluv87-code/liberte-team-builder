@@ -7,35 +7,48 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 💡 [디자인 전면 보완]: 사이드바 어두운 회색, 표 헤더 가운데 정렬, 테두리 검은색 강제 적용 CSS
+# 💡 [핵심 수정]: 다크/라이트 모드에 관계없이 무조건 다크 모드 스타일로 색상을 강제 고정합니다.
 st.markdown(
     """
     <style>
-    /* ⬅️ 왼쪽 사이드바 메뉴창 자체를 확실한 어두운 회색(#495057)으로 변경 */
+    /* 1️⃣ 앱 전체 배경색 및 기본 글자색 고정 (다크 모드 스타일) */
+    .stApp {
+        background-color: #1a1c1e !important;
+        color: #ffffff !important;
+    }
+    
+    /* 메인 화면 타이틀 및 텍스트 색상 고정 */
+    h1, h2, h3, h4, h5, h6, p, span, lable {
+        color: #ffffff !important;
+    }
+    
+    /* 2️⃣ 왼쪽 사이드바 메뉴창 배경색 및 글자색 고정 (더 진한 흑회색) */
     [data-testid="stSidebar"], 
     [data-testid="stSidebarContent"], 
     section[data-sidebar="true"] > div {
-        background-color: #495057 !important;
+        background-color: #111214 !important;
     }
     
-    /* 사이드바 글자색들이 묻히지 않도록 깔끔한 흰색 계열(#f8f9fa)로 변경 */
+    /* 사이드바 내부의 모든 텍스트를 흰색으로 고정 */
     [data-testid="stSidebar"] h1, 
     [data-testid="stSidebar"] h2, 
     [data-testid="stSidebar"] h3, 
     [data-testid="stSidebar"] p,
     [data-testid="stSidebar"] label,
-    [data-testid="stSidebar"] span {
-        color: #f8f9fa !important;
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] div {
+        color: #ffffff !important;
     }
 
-    /* 사이드바 내부 표 간격 촘촘하게 */
+    /* 사이드바 내부 표 간격 조절 */
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th {
         padding: 2px 4px !important;
         font-size: 13px !important;
     }
     
-    /* 🎯 메인 결과 표 내부의 이름(td)과 제목 헤더(th)까지 모두 완벽하게 가운데 정렬 */
+    /* 3️⃣ 메인 결과 표 스타일 완벽 고정 (가운데 정렬 + 검은색 테두리 + 밝은 회색 배경) */
+    /* 라이트 모드에서도 글자가 선명하게 보이도록 표 배경은 약간 밝은 회색, 글자는 검은색으로 고정합니다 */
     .stDataFrame table,
     .stDataFrame th,
     .stDataFrame td,
@@ -43,9 +56,10 @@ st.markdown(
     [data-testid="stTable"] td {
         text-align: center !important;
         vertical-align: middle !important;
+        color: #000000 !important; /* 표 내부 글자는 무조건 검은색 */
     }
 
-    /* 🔲 결과 표 테두리선을 아주 진하고 선명한 검은색(#000000)으로 강제 적용 */
+    /* 표 테두리선 순도 100% 검은색으로 강제 고정 */
     .stDataFrame table,
     .stDataFrame th,
     .stDataFrame td,
@@ -53,6 +67,11 @@ st.markdown(
     div[data-testid="stTable"] th,
     div[data-testid="stTable"] td {
         border: 1.5px solid #000000 !important;
+    }
+    
+    /* 4️⃣ 통합 에버리지(Metric) 수치 글자색 흰색으로 고정 */
+    [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
+        color: #ffffff !important;
     }
     </style>
     """,
@@ -120,7 +139,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_speed_master_final"
+    key="liberit_speed_master_ultimate"
 )
 st.session_state.member_df = edited_df
 
@@ -213,13 +232,13 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
+                    # 표의 배경색은 글자가 가장 눈에 띄기 좋은 밝은 회색(#e9ecef)으로 고정합니다.
                     styled_table = combined_table.style.set_properties(**{
-                        'background-color': '#ced4da',  
-                        'color': '#111111',             
-                        'font-weight': 'normal'
+                        'background-color': '#e9ecef',  
+                        'color': '#000000',             
+                        'font-weight': 'bold' # 이름이 더 잘 보이도록 볼드 처리 추가
                     })
                     
-                    # 제목 헤더와 본문 텍스트 모두 정중앙 정렬 세팅 추가
                     st.dataframe(
                         styled_table, 
                         use_container_width=True, 
