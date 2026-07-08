@@ -76,6 +76,8 @@ if os.path.exists(IMAGE_NAME):
     _, center_col, _ = st.columns([1, 2, 1])
     with center_col:
         st.image(IMAGE_NAME, use_container_width=True)
+else:
+    st.caption("💡 최상단 여백용 'logo.jpg' 파일을 app.py와 같은 폴더에 넣어주시면 로고가 표시됩니다.")
 
 st.title("🎳 Liberte 정기전 테이블 배치")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 팀이 편성됩니다.")
@@ -93,7 +95,6 @@ if "member_df" not in st.session_state:
 # 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
 num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
-# [추가된 기능]
 show_avg = st.sidebar.toggle("📊 통합 에버리지 수치 보기", value=True)
 
 st.sidebar.markdown("---")
@@ -164,7 +165,6 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     current_team_df = pd.DataFrame(teams[i], columns=["이름", "에버리지"])
                     total_avg = current_team_df["에버리지"].mean()
                     
-                    # (기존 HTML 로직 그대로)
                     left_lane = [row["이름"] for idx, row in current_team_df.iterrows() if idx % 2 == 0]
                     right_lane = [row["이름"] for idx, row in current_team_df.iterrows() if idx % 2 != 0]
                     max_len = max(len(left_lane), len(right_lane))
@@ -172,14 +172,32 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     while len(right_lane) < max_len: right_lane.append("")
                     
                     html_table = f"""
-                    <table style="width:100%; border-collapse:collapse; background-color:#e9ecef; color:black; text-align:center;">
-                        <thead><tr><th>좌측</th><th>우측</th></tr></thead>
-                        <tbody>"""
-                    for idx in range(max_len):
-                        html_table += f"<tr><td>{left_lane[idx]}</td><td>{right_lane[idx]}</td></tr>"
-                    html_table += "</tbody></table>"
-                    st.components.v1.html(html_table, height=(max_len * 40) + 50, scrolling=False)
+                    <div style="padding: 2px; background-color: #000000;">
+                        <table style="width:100%; border-collapse:collapse; border:3px solid #000000; text-align:center; vertical-align:middle; background-color:#e9ecef; font-family:sans-serif; font-size:15px;">
+                            <thead>
+                                <tr style="background-color:#ced4da;">
+                                    <th style="border:3px solid #000000; padding:8px; color:#000000; font-weight:bold; text-align:center; width:50%;">⬅️ 좌측 레인</th>
+                                    <th style="border:3px solid #000000; padding:8px; color:#000000; font-weight:bold; text-align:center; width:50%;">➡️ 우측 레인</th>
+                                </tr>
+                            </thead>
+                            <tbody>"""
                     
-                    # [요청하신 에버리지 토글 출력]
+                    for idx in range(max_len):
+                        html_table += f"""
+                                <tr>
+                                    <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{left_lane[idx]}</td>
+                                    <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{right_lane[idx]}</td>
+                                </tr>
+                        """
+                    
+                    html_table += """
+                            </tbody>
+                        </table>
+                    </div>
+                    """
+                    
+                    st.components.v1.html(html_table, height=(max_len * 42) + 55, scrolling=False)
+                    
+                    # [요청하신 에버리지 표시 여부 제어]
                     if show_avg:
                         st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
