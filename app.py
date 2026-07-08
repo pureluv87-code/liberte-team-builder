@@ -6,7 +6,7 @@ import time
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 💡 [신규 스타일 추가]: 사이드바 내부 표의 간격과 글자 크기를 더 촘촘하게 강제 조정합니다.
+# 사이드바 내부 표의 간격과 글자 크기 촘촘하게 조절
 st.markdown(
     """
     <style>
@@ -53,14 +53,13 @@ with btn_col2:
         st.session_state.member_df["참석"] = False
         st.rerun()
 
-# 💡 [핵심 수정]: 각 열의 너비를 최소화하여 스크롤바가 안 생기도록 고정합니다.
+# 열 너비 촘촘하게 세팅
 sidebar_column_config = {
     "참석": st.column_config.CheckboxColumn("참석", width=45, default=True),
     "이름": st.column_config.TextColumn("이름", width=80, required=True),
     "에버리지": st.column_config.NumberColumn("Avg", width=55, min_value=0, max_value=300, required=True)
 }
 
-# 고속 렌더링 편집 창 (use_container_width=True를 유지하되 내부 지정 너비로 압축)
 edited_df = st.sidebar.data_editor(
     st.session_state.member_df, 
     num_rows="fixed", 
@@ -92,7 +91,6 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
-    players = players.sort_values(by="에버리지", ascending=False).reset_index(drop=True)
     
     total_players = len(players)
     
@@ -100,38 +98,45 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
         st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다. 왼쪽 메뉴에서 테이블 수를 줄이거나 참석 인원을 더 체크해 주세요.")
     else:
         try:
-            with st.spinner("🎳 Liberte 최적의 레인 조합을 계산하는 중... 잠시만 기다려주세요."):
-                time.sleep(0.5)
+            with st.spinner("🎳 Liberte 최적의 황금 밸런스 조합을 계산하는 중..."):
+                time.sleep(2)
                 
-                teams = [[] for _ in range(num_teams)]
-                bottom_players = players.tail(num_teams).sample(frac=1).reset_index(drop=True)
-                remaining_players = players.head(total_players - num_teams).copy()
+                best_teams = None
+                best_diff = 999.0
                 
-                shuffled_remaining = []
-                for i in range(0, len(remaining_players), num_teams):
-                    chunk = remaining_players.iloc[i:i+num_teams].sample(frac=1)
-                    shuffled_remaining.append(chunk)
-                remaining_players = pd.concat(shuffled_remaining).reset_index(drop=True)
+                # 최대 5000번 최적의 조합 시뮬레이션
+                for _ in range(5000):
+                    shuffled_players = players.sample(frac=1).reset_index(drop=True)
+                    
+                    temp_teams = [[] for _ in range(num_teams)]
+                    for idx, row in shuffled_players.iterrows():
+                        temp_teams[idx % num_teams].append((row["이름"], row["에버리지"]))
+                    
+                    team_averages = []
+                    for t in temp_teams:
+                        avgs = [p[1] for p in t]
+                        team_averages.append(np.mean(avgs) if avgs else 0)
+                    
+                    current_diff = max(team_averages) - min(team_averages)
+                    
+                    if current_diff <= 5.0:
+                        best_teams = temp_teams
+                        best_diff = current_diff
+                        break
+                    
+                    if current_diff < best_diff:
+                        best_diff = current_diff
+                        best_teams = temp_teams
                 
-                for i in range(num_teams):
-                    teams[i].append((bottom_players.loc[i, "이름"], bottom_players.loc[i, "에버리지"]))
-                    
-                for idx, row in remaining_players.iterrows():
-                    turn = idx // num_teams
-                    step = idx % num_teams
-                    if turn % 2 == 0:
-                        team_idx = step
-                    else:
-                        team_idx = num_teams - 1 - step
-                    
-                    teams[team_idx].append((row["이름"], row["에버리지"]))
-                    
-            st.success(f"📊 배정 완료: 오늘 총 **{total_players}명** 참석 ➡️ **{num_teams}개 테이블** 배치 완료")
+                teams = best_teams
+
+            # [수정] 성공/경고 메시지 알림을 완전히 제외하고 바로 테이블 결과만 띄웁니다.
             
             table_cols = st.columns([1] * num_teams)
             for i in range(num_teams):
                 with table_cols[i]:
                     st.markdown(f"### 🏟️ {i+1}번 테이블")
+                    
                     current_team_df = pd.DataFrame(teams[i], columns=["이름", "에버리지"]).sort_values(by="에버리지", ascending=False).reset_index(drop=True)
                     total_avg = current_team_df["에버리지"].mean()
                     
