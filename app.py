@@ -1,64 +1,76 @@
+import sys
+import streamlit.web.cli as stcli
 import streamlit as st
 import pandas as pd
 import numpy as np
 import time
 
+# [배포 안정성 확보] 
+if __name__ == "__main__":
+    if len(sys.argv) == 1 or sys.argv[1] != "run":
+        sys.argv = ["streamlit", "run", sys.argv[0]]
+        sys.exit(stcli.main())
+
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 st.title("🎳 Liberte 정기전 레인별 팀 빌더")
-st.write("지정한 테이블 수에 맞춰 당일 인원을 좌/우 레인 명단을 보여줍니다.")
+st.write("왼쪽 사이드바에서 당일 참석자를 체크하고 버튼을 누르면 테이블별로 조가 편성됩니다.")
 
 st.markdown("---")
 
-# 2. 서버 전용 회원 명단 기억 시스템 (새로고침해도 유지)
+# 2. 서버 전용 회원 명단 시스템 (메모리 유지)
 if "member_df" not in st.session_state:
     initial_data = {
+        "참석": [True] * 31,
         "이름": ["김정수", "문상원", "박진원", "박기덕", "이상현", "원종혁", "이준협", "정상현", "강병철", "유현재", "한승오", "최낙민", "안치관", "송미연", "김용태", "김지현", "조인희", "김수진", "김지원", "김민표", "추진", "윤관호", "유명선", "추송", "안호성", "정민영", "김정아", "권혁환", "이도연", "홍소연", "장성민"],
         "에버리지": [227, 220, 214, 213, 212, 212, 210, 208, 205, 204, 204, 202, 199, 199, 198, 195, 194, 192, 190, 188, 187, 186, 178, 176, 174, 170, 166, 165, 164, 156, 154]
     }
     st.session_state.member_df = pd.DataFrame(initial_data)
 
-# 3. 사이드바 설정
+# 3. [개선] 사이드바 설정 영역 (명단 편집창을 왼쪽으로 이동)
 st.sidebar.header("⚙️ 정기전 설정")
-num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=6, value=3)
+num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
 
 st.sidebar.markdown("---")
-st.sidebar.write("💡 **안내:**")
-st.sidebar.write("테이블 하단에 통합 에버리지만 표기됩니다.")
+st.sidebar.subheader("👥 당일 참석자 명단 편집")
+st.sidebar.write("오늘 온 회원들을 체크해 주세요. (스크롤을 내려 회원 추가/수정도 가능)")
 
-# 4. 메인 화면: 데이터 입력 (표 간격 고정 설정 추가)
-st.subheader("👥 당일 참석자 명단 편집")
-st.write("아래 표에서 오늘 온 회원들을 편집하세요. 이름이나 점수를 바꾸면 실시간으로 반영됩니다.")
-
-# [수정] 입력 표의 이름과 에버리지 컬럼 너비를 고정 비율로 세팅
-column_config = {
-    "이름": st.column_config.TextColumn("이름", width="medium", required=True),
-    "에버리지": st.column_config.NumberColumn("에버리지", width="medium", min_value=0, max_value=300, required=True)
+# 사이드바 전용 컬럼 너비 콤팩트 설정
+sidebar_column_config = {
+    "참석": st.column_config.CheckboxColumn("참석", width="small", default=True),
+    "이름": st.column_config.TextColumn("이름", width="small", required=True),
+    "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
 }
 
-edited_df = st.data_editor(
-    st.session_state.member_df, 
+# 사이드바 안에 쏙 들어가는 크기로 명단 표 배치
+edited_df = st.sidebar.data_editor(
+    st.session_state.member_df[["참석", "이름", "에버리지"]], 
     num_rows="dynamic", 
     use_container_width=True,
-    column_config=column_config  # 고정 설정 반영
+    column_config=sidebar_column_config,
+    hide_index=True # 불필요한 번호 열을 숨겨 가로 간격을 더 확보합니다.
 )
 st.session_state.member_df = edited_df
 
-# 5. 팀 빌딩 핵심 알고리즘 버튼
-if st.button("🔥 지정된 테이블 수로 팀 짜기 시작", type="primary"):
+st.sidebar.markdown("---")
+st.sidebar.write("💡 **안내:**")
+st.sidebar.write("결과 화면에는 테이블 하단에 통합 에버리지만 표기됩니다.")
+
+# 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
+# 메인 화면에 버튼을 크게 배치하여 시인성을 높였습니다.
+if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
     
-    players = edited_df.dropna(subset=["이름", "에버리지"]).copy()
+    players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     players = players.sort_values(by="에버리지", ascending=False).reset_index(drop=True)
     
     total_players = len(players)
     
     if total_players < num_teams:
-        st.error(f"🚨 현재 참석 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다. 테이블 수를 줄이거나 인원을 추가해 주세요.")
+        st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다. 왼쪽 메뉴에서 테이블 수를 줄이거나 참석 인원을 더 체크해 주세요.")
     else:
-        # [수정] 멋진 로딩 효과(Spinner) 추가! 대기 시간을 시각적으로 보여줍니다.
-        with st.spinner("🎳 최적의 레인 조합을 계산하는 중... 잠시만 기다려주세요."):
-            time.sleep(1.5) # 로딩 효과를 눈으로 볼 수 있게 1.5초간 대기 시킵니다.
+        with st.spinner("🎳 Liberte 최적의 레인 조합을 계산하는 중... 잠시만 기다려주세요."):
+            time.sleep(1.5)
             
             teams = [[] for _ in range(num_teams)]
             bottom_players = players.tail(num_teams).sample(frac=1).reset_index(drop=True)
@@ -82,9 +94,9 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작", type="primary"
                     team_idx = num_teams - 1 - step
                 teams[team_idx].append((row["이름"], row["에버리지"]))
                 
-        # 로직 완료 후 성공 메시지 출력
         st.success(f"📊 배정 완료: 오늘 총 **{total_players}명** 참석 ➡️ **{num_teams}개 테이블** 배치 완료")
         
+        # 결과 화면 표 간격 고정 배정
         table_cols = st.columns([1] * num_teams)
         
         for i in range(num_teams):
