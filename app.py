@@ -116,7 +116,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     else:
         try:
             with st.spinner("🎳 Liberte 최적의 황금 밸런스 조합을 계산하는 중..."):
-                time.sleep(0.5)
+                time.sleep(2)
                 
                 best_teams = None
                 best_diff = 999.0
