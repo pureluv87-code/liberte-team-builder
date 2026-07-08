@@ -7,23 +7,14 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 사이드바 촘촘하게 + 🎯 [핵심 수정]: 메인 화면 결과 표 내부의 글자(이름)들을 무조건 가운데 정렬하는 CSS 추가
+# 사이드바 내부 표의 간격과 글자 크기 촘촘하게 조절
 st.markdown(
     """
     <style>
-    /* 사이드바 스타일 조절 */
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] td, 
     [data-testid="stSidebar"] .stDataFrame div[data-testid="stTable"] th {
         padding: 2px 4px !important;
         font-size: 13px !important;
-    }
-    
-    /* 🔥 메인 결과 표 내부의 텍스트(이름)들을 완벽하게 가운데 정렬 */
-    .stDataFrame div[data-testid="stTable"] td,
-    .stDataFrame div[data-testid="stTable"] th,
-    [data-testid="stDataFrame"] td,
-    [data-testid="stDataFrame"] th {
-        text-align: center !important;
     }
     </style>
     """,
@@ -184,15 +175,24 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
+                    # 💡 [핵심 수정]: 판다스 자체 데이터프레임 속성에 직접 가운데 정렬과 어두운 회색 배경을 주입합니다.
                     styled_table = combined_table.style.set_properties(**{
-                        'background-color': '#e2e6ea',  
-                        'color': '#111111',             
-                        'font-weight': 'normal'
+                        'background-color': '#ced4da',  # 한 단계 더 어둡고 묵직해진 배경색
+                        'color': '#111111',             # 선명한 검은색 글자
+                        'font-weight': 'normal',        # 기본 두께 유지
+                        'text-align': 'center'          # 판다스 자체 셀 텍스트 강제 가운데 정렬
                     })
                     
-                    st.dataframe(styled_table, use_container_width=True, hide_index=True)
-                    
-                    # 💡 [원상 복구]: 에버리지 수치 정렬 스타일을 삭제하여 순정 형태(왼쪽 정렬)로 되돌렸습니다.
+                    # 데이터프레임을 화면에 렌더링할 때도 열 설정을 통해 정렬을 확실히 고정합니다.
+                    st.dataframe(
+                        styled_table, 
+                        use_container_width=True, 
+                        hide_index=True,
+                        column_config={
+                            "⬅️ 좌측 레인": st.column_config.TextColumn(alignment="center"),
+                            "➡️ 우측 레인": st.column_config.TextColumn(alignment="center")
+                        }
+                    )
                     st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
                     
         except Exception as e:
