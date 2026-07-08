@@ -18,7 +18,7 @@ st.write("왼쪽 사이드바에서 당일 참석자를 체크하고 버튼을 �
 
 st.markdown("---")
 
-# 2. 서버 전용 회원 명단 시스템 (메모리 유지)
+# 2. 서버 전용 회원 명단 시스템 (구조 안정화)
 if "member_df" not in st.session_state:
     initial_data = {
         "참석": [True] * 31,
@@ -27,13 +27,13 @@ if "member_df" not in st.session_state:
     }
     st.session_state.member_df = pd.DataFrame(initial_data)
 
-# 3. [개선] 사이드바 설정 영역 (명단 편집창을 왼쪽으로 이동)
+# 3. 사이드바 설정 영역
 st.sidebar.header("⚙️ 정기전 설정")
 num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", min_value=1, max_value=7, value=4)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("👥 당일 참석자 명단 편집")
-st.sidebar.write("오늘 온 회원들을 체크해 주세요. (스크롤을 내려 회원 추가/수정도 가능)")
+st.sidebar.write("오늘 온 회원들을 체크해 주세요.")
 
 # 사이드바 전용 컬럼 너비 콤팩트 설정
 sidebar_column_config = {
@@ -42,13 +42,13 @@ sidebar_column_config = {
     "에버리지": st.column_config.NumberColumn("Avg", width="small", min_value=0, max_value=300, required=True)
 }
 
-# 사이드바 안에 쏙 들어가는 크기로 명단 표 배치
+# [에러 해결] 복잡한 컬럼 지정 방식을 빼고 안전하게 데이터 전체를 넣어 표를 엽니다.
 edited_df = st.sidebar.data_editor(
-    st.session_state.member_df[["참석", "이름", "에버리지"]], 
+    st.session_state.member_df, 
     num_rows="dynamic", 
     use_container_width=True,
     column_config=sidebar_column_config,
-    hide_index=True # 불필요한 번호 열을 숨겨 가로 간격을 더 확보합니다.
+    hide_index=True
 )
 st.session_state.member_df = edited_df
 
@@ -57,7 +57,6 @@ st.sidebar.write("💡 **안내:**")
 st.sidebar.write("결과 화면에는 테이블 하단에 통합 에버리지만 표기됩니다.")
 
 # 4. 메인 화면: 팀 빌딩 시작 버튼 및 결과 출력
-# 메인 화면에 버튼을 크게 배치하여 시인성을 높였습니다.
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
     
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
@@ -92,7 +91,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                     team_idx = step
                 else:
                     team_idx = num_teams - 1 - step
-                teams[team_idx].append((row["이름"], row["에버리지"]))
+                teams[team_idx].append((row["이름"], row["average"] if "average" in row else row["에버리지"]))
                 
         st.success(f"📊 배정 완료: 오늘 총 **{total_players}명** 참석 ➡️ **{num_teams}개 테이블** 배치 완료")
         
