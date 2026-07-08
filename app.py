@@ -21,20 +21,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 💡 [핵심 수정]: 로고 이미지가 화면 가로 기준 정중앙에 오도록 CSS 마크업을 적용합니다.
+# 💡 [버그 수정]: 깨진 이미지 흔적(HTML 태그)을 완벽히 제거하고 Streamlit 컬럼 레이아웃으로만 중앙 정렬합니다.
 IMAGE_NAME = "logo.jpg"  # 파일 확장자가 png라면 "logo.png"로 변경해주세요.
 
 if os.path.exists(IMAGE_NAME):
-    # HTML 정렬 태그를 사용하여 이미지를 완벽하게 가운데로 정렬합니다.
-    st.markdown(
-        f"""
-        <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-            <img src="data:image/jpeg;base64" id="club_logo" style="width: 400px; max-width: 100%;">
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    # Streamlit 고유 기능을 활용해 안전하게 가운데 정렬 영역에 이미지를 밀어 넣습니다.
+    # 화면을 1:2:1 비율로 쪼개어 가운데(center_col)에만 이미지를 넣음으로써 완벽하게 정중앙에 정렬합니다.
     _, center_col, _ = st.columns([1, 2, 1])
     with center_col:
         st.image(IMAGE_NAME, use_container_width=True)
