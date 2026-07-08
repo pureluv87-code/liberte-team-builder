@@ -151,22 +151,43 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
         st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다.")
     else:
         with st.spinner("🎳 Liberte 최적의 황금 밸런스 조합을 계산하는 중..."):
-            time.sleep(2)
-            teams = [[] for _ in range(num_teams)]
-            shuffled_players = players.sample(frac=1).reset_index(drop=True)
-            for idx, row in shuffled_players.iterrows():
-                teams[idx % num_teams].append((row["이름"], row["에버리지"]))
+            best_teams = None
+            best_diff = 999.0
             
-            st.info(f"📊 **오늘 총 참석 인원:** {total_players}명  |  🏟️ **배정 테이블 수:** {num_teams}개")
+            # 루프 강화: 10,000번 반복하여 5점 이하 조합 탐색
+            for _ in range(10000):
+                shuffled_players = players.sample(frac=1).reset_index(drop=True)
+                temp_teams = [[] for _ in range(num_teams)]
+                for idx, row in shuffled_players.iterrows():
+                    temp_teams[idx % num_teams].append((row["이름"], row["에버리지"]))
+                
+                # 각 팀의 평균 계산
+                team_averages = [np.mean([p[1] for p in t]) if t else 0 for t in temp_teams]
+                current_diff = max(team_averages) - min(team_averages)
+                
+                # 5점 이하 조합 찾으면 즉시 중단
+                if current_diff <= 5.0:
+                    best_teams = temp_teams
+                    best_diff = current_diff
+                    break
+                
+                # 최선 조합 기록
+                if current_diff < best_diff:
+                    best_diff = current_diff
+                    best_teams = temp_teams
+            
+            teams = best_teams
+            st.info(f"📊 **오늘 총 참석 인원:** {total_players}명 | 🏟️ **배정 테이블 수:** {num_teams}개")
+            st.success(f"✅ 팀 구성 완료! (테이블 간 에버 차이: {best_diff:.1f}점)")
+            
             table_cols = st.columns([1] * num_teams)
             for i in range(num_teams):
                 with table_cols[i]:
                     st.markdown(f"### 🏟️ {i+1}번 테이블")
                     current_team_df = pd.DataFrame(teams[i], columns=["이름", "에버리지"])
-                    total_avg = current_team_df["에버리지"].mean()
                     
-                    left_lane = [row["이름"] for idx, row in current_team_df.iterrows() if idx % 2 == 0]
-                    right_lane = [row["이름"] for idx, row in current_team_df.iterrows() if idx % 2 != 0]
+                    left_lane = [row[0] for idx, row in enumerate(teams[i]) if idx % 2 == 0]
+                    right_lane = [row[0] for idx, row in enumerate(teams[i]) if idx % 2 != 0]
                     max_len = max(len(left_lane), len(right_lane))
                     while len(left_lane) < max_len: left_lane.append("")
                     while len(right_lane) < max_len: right_lane.append("")
@@ -181,23 +202,11 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                                 </tr>
                             </thead>
                             <tbody>"""
-                    
                     for idx in range(max_len):
-                        html_table += f"""
-                                <tr>
-                                    <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{left_lane[idx]}</td>
-                                    <td style="border:3px solid #000000; padding:8px; color:#000000; font-weight:normal; text-align:center;">{right_lane[idx]}</td>
-                                </tr>
-                        """
-                    
-                    html_table += """
-                            </tbody>
-                        </table>
-                    </div>
-                    """
+                        html_table += f"<tr><td style='border:3px solid #000000; padding:8px; color:#000000;'>{left_lane[idx]}</td><td style='border:3px solid #000000; padding:8px; color:#000000;'>{right_lane[idx]}</td></tr>"
+                    html_table += "</tbody></table></div>"
                     
                     st.components.v1.html(html_table, height=(max_len * 42) + 55, scrolling=False)
                     
-                    # [요청하신 에버리지 표시 여부 제어]
                     if show_avg:
-                        st.metric(label="통합 에버리지", value=f"{total_avg:.1f} 점")
+                        st.metric(label="통합 에버리지", value=f"{current_team_df['에버리지'].mean():.1f} 점")
