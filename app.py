@@ -7,7 +7,7 @@ import os
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
 
-# 💡 [표 스타일 집중 보완 CSS]: 내부 격자 테두리 블랙 및 헤더 제목 가운데 정렬 강제 주입
+# 💡 [표 스타일 보완 CSS]: 격자선 두께 및 외부 전체 블랙 레이아웃 강제 지정
 st.markdown(
     """
     <style>
@@ -62,8 +62,7 @@ st.markdown(
         background-color: #1a1c1e !important;
     }
 
-    /* 3️⃣ 메인 결과 표 스타일 완벽 고정 */
-    /* 🎯 표 제목 헤더(th, .corner-header 등)와 내부 셀(td)까지 전부 완벽 정중앙 정렬 */
+    /* 3️⃣ 메인 결과 표 외부 컨테이너 스타일 고정 */
     .stDataFrame table,
     .stDataFrame th,
     .stDataFrame td,
@@ -77,15 +76,10 @@ st.markdown(
         color: #000000 !important; 
     }
 
-    /* 🔲 결과 표 외곽 및 내부 모든 칸의 격자 테두리선(border)을 선명한 검은색(#000000)으로 강제 적용 */
+    /* 결과 표 외부를 둘러싼 그리드라인 바깥 테두리 두껍게 선언 */
     .stDataFrame table,
-    .stDataFrame th,
-    .stDataFrame td,
-    div[data-testid="stDataFrame"] table,
-    div[data-testid="stDataFrame"] th,
-    div[data-testid="stDataFrame"] td,
-    div[data-testid="stDataFrame"] tr {
-        border: 1.5px solid #000000 !important;
+    div[data-testid="stDataFrame"] table {
+        border: 3px solid #000000 !important;
         border-collapse: collapse !important;
     }
     
@@ -157,7 +151,7 @@ edited_df = st.sidebar.data_editor(
     use_container_width=True,
     column_config=sidebar_column_config,
     hide_index=True,
-    key="liberit_code_style_final_perfect"
+    key="liberit_code_style_heavy_border"
 )
 st.session_state.member_df = edited_df
 
@@ -249,18 +243,24 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         "➡️ 우측 레인": right_lane
                     })
                     
-                    # 💡 표 안의 스타일 및 내부 테두리 블랙 속성 명시적 선언
+                    # 💡 [집중 수정]: 데이터 셀(td)과 제목 셀(th) 내부 모든 가로/세로 테두리를 3px 두꺼운 검은색으로 고정
                     styled_table = combined_table.style.set_properties(**{
                         'background-color': '#e9ecef',  
                         'color': '#000000',             
                         'font-weight': 'normal',
-                        'border': '1.5px solid #000000'
+                        'border': '3px solid #000000'   # 각 칸의 가로세로 테두리 두껍게 고정
                     }).set_table_styles([
-                        # 표 헤더 제목(th) 영역을 타겟팅하여 정중앙 정렬 강제 주입
-                        {'selector': 'th', 'props': [('text-align', 'center'), ('vertical-align', 'middle'), ('background-color', '#ced4da'), ('color', '#000000'), ('font-weight', 'bold'), ('border', '1.5px solid #000000')]}
+                        # 헤더 제목 가로세로 테두리선 두껍게 지정 + 정중앙 정렬 속성 강화
+                        {'selector': 'th', 'props': [
+                            ('text-align', 'center'), 
+                            ('vertical-align', 'middle'), 
+                            ('background-color', '#ced4da'), 
+                            ('color', '#000000'), 
+                            ('font-weight', 'bold'), 
+                            ('border', '3px solid #000000')
+                        ]}
                     ])
                     
-                    # st.dataframe 내부 설정에서도 가운데 정렬 재확인 고정
                     st.dataframe(
                         styled_table, 
                         use_container_width=True, 
