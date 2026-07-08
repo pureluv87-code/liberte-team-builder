@@ -80,8 +80,8 @@ if os.path.exists(IMAGE_NAME):
 else:
     st.caption("💡 최상단 여백용 'logo.jpg' 파일을 app.py와 같은 폴더에 넣어주시면 로고가 표시됩니다.")
 
-st.title("🎳 Liberte 정기전 레인별 팀 빌더")
-st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 조가 편성됩니다.")
+st.title("🎳 Liberte 정기전 테이블 배치")
+st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 팀이 편성됩니다.")
 st.markdown("---")
 
 # 2. 데이터 초기화 및 상태 관리
