@@ -59,7 +59,7 @@ if "member_df" not in st.session_state:
 # 3. 사이드바 설정
 st.sidebar.header("⚙️ 정기전 설정")
 num_teams = st.sidebar.slider("오늘 사용할 테이블(팀) 수 지정", 1, 7, 4)
-use_balance = st.sidebar.toggle("⚖️ 밸런스 로직 사용 (에버리지 맞춤)", value=True)
+use_balance = st.sidebar.toggle("⚖️ 에버리지 밸런스 맞춤 사용", value=True)
 show_avg = st.sidebar.toggle("📊 통합 에버리지 수치 보기", value=True)
 
 st.sidebar.markdown("---")
@@ -91,19 +91,26 @@ if st.button("🔥 팀 짜기 시작 (클릭)", type="primary", use_container_wi
     else:
         with st.spinner("🎳 팀 배정 중..."):
             if use_balance:
-                # [기존 밸런스 로직]
+                # [수정된 밸런스 로직]
                 best_teams = None; best_diff = 999.0
                 for _ in range(10000):
-                    shuffled = players.sample(frac=1).reset_index(drop=True)
+                    shuffled_players = players.sample(frac=1).reset_index(drop=True)
                     temp_teams = [[] for _ in range(num_teams)]
-                    for idx, row in shuffled.iterrows(): temp_teams[idx % num_teams].append((row["이름"], row["에버리지"]))
-                    avgs = [np.mean([p[1] for p in t]) if t else 0 for t in temp_teams]
-                    diff = max(avgs) - min(avgs)
-                    if diff <= 5.0: best_teams = temp_teams; break
-                    if diff < best_diff: best_diff = diff; best_teams = temp_teams
+                    for idx, row in shuffled_players.iterrows():
+                        temp_teams[idx % num_teams].append((row["이름"], row["에버리지"]))
+                    
+                    team_averages = [np.mean([p[1] for p in t]) if t else 0 for t in temp_teams]
+                    current_diff = max(team_averages) - min(team_averages)
+                    
+                    if current_diff <= 4.0:
+                        best_teams = temp_teams
+                        break
+                    if current_diff < best_diff:
+                        best_diff = current_diff
+                        best_teams = temp_teams
                 teams = best_teams
             else:
-                # [랜덤 배정 로직 (에버 무시)]
+                # [랜덤 배정 로직]
                 shuffled = players.sample(frac=1).values
                 teams = [[] for _ in range(num_teams)]
                 for idx, row in enumerate(shuffled): teams[idx % num_teams].append((row[1], row[2]))
