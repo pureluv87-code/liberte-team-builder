@@ -63,7 +63,7 @@ use_balance = st.sidebar.toggle("⚖️ 에버리지 밸런스 맞춤 사용", v
 show_avg = st.sidebar.toggle("📊 통합 에버리지 수치 보기", value=True)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("👥 당일 참석자 명단 편집")
+st.sidebar.subheader("👥 당일 참석자 명단 편집 (칠텐 7/8 기준 에버)")
 
 btn_col1, btn_col2 = st.sidebar.columns(2)
 if btn_col1.button("✅ 전체 선택"):
