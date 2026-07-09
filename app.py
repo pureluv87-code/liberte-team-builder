@@ -85,9 +85,10 @@ if col2.button("❌ 맨 아래 삭제"):
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
+    total_players = len(players)
     
-    if len(players) < num_teams:
-        st.error("참석 인원이 부족합니다.")
+    if total_players < num_teams:
+        st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다.")
     else:
         with st.spinner("🎳 팀 배정 중..."):
             time.sleep(2)
@@ -110,11 +111,14 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         best_diff = current_diff
                         best_teams = temp_teams
                 teams = best_teams
+                st.info(f"📊 **오늘 총 참석 인원:** {total_players}명 | 🏟️ **배정 테이블 수:** {num_teams}개")
             else:
                 # [랜덤 배정 로직]
                 shuffled = players.sample(frac=1).values
                 teams = [[] for _ in range(num_teams)]
                 for idx, row in enumerate(shuffled): teams[idx % num_teams].append((row[1], row[2]))
+
+                st.info(f"📊 **오늘 총 참석 인원:** {total_players}명 | 🏟️ **배정 테이블 수:** {num_teams}개")
             
             # 결과 출력
             table_cols = st.columns([1] * num_teams)
