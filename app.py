@@ -44,7 +44,7 @@ if os.path.exists(IMAGE_NAME):
         st.image(IMAGE_NAME, use_container_width=True)
 
 st.title("🎳 Liberte 정기전 테이블 배치")
-st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 버튼을 누르면 팀이 편성됩니다.")
+st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 팀이 편성됩니다.")
 st.markdown("---")
 
 # 데이터 초기화
@@ -82,7 +82,7 @@ if col2.button("❌ 맨 아래 삭제"):
     st.rerun()
 
 # 4. 메인 팀 배정
-if st.button("🔥 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
+if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
     
@@ -90,6 +90,7 @@ if st.button("🔥 팀 짜기 시작 (클릭)", type="primary", use_container_wi
         st.error("참석 인원이 부족합니다.")
     else:
         with st.spinner("🎳 팀 배정 중..."):
+            time.sleep(2)
             if use_balance:
                 # [수정된 밸런스 로직]
                 best_teams = None; best_diff = 999.0
