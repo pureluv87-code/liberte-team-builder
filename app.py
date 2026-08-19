@@ -96,29 +96,27 @@ if col2.button("❌ 맨 아래 삭제"):
     st.rerun()
 
 
-# 4. 음원 재생 함수 정의 (연속 클릭 시에도 무조건 재생되도록 JS Audio 객체 방식 적용)
+# 4. 음원 재생 함수 정의 (session_state 기반 완벽 재재생 보장)
 def play_audio(audio_file_path):
     if os.path.exists(audio_file_path):
         with open(audio_file_path, "rb") as f:
             data = f.read()
             b64 = base64.b64encode(data).decode()
 
-            audio_container = st.empty()
-            timestamp = int(time.time() * 1000)
+            # 카운터 증가로 매번 완전히 새로운 Key 생성
+            if "audio_counter" not in st.session_state:
+                st.session_state.audio_counter = 0
+            st.session_state.audio_counter += 1
 
-            md = f"""
-                <div id="audio_trigger_{timestamp}"></div>
-                <script>
-                    (function() {{
-                        var audio = new Audio("data:audio/mp3;base64,{b64}");
-                        audio.currentTime = 0;
-                        audio.play().catch(function(error) {{
-                            console.log("Audio play failed:", error);
-                        }});
-                    }})();
-                </script>
+            audio_key = f"audio_{st.session_state.audio_counter}"
+
+            # HTML5 오디오 태그 + autoplay (가장 안정적)
+            audio_html = f"""
+                <audio key="{audio_key}" autoplay style="display:none;">
+                    <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+                </audio>
             """
-            audio_container.markdown(md, unsafe_allow_html=True)
+            st.components.v1.html(audio_html, height=0, width=0)
 
 
 # 5. 메인 팀 배정 함수 (6, 5, 6, 5 배치)
