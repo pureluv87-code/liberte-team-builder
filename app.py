@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import time
 import os
+import base64
 
 # 1. 페이지 설정
 st.set_page_config(page_title="Liberte 정기전 팀 빌더", layout="wide")
@@ -87,7 +88,44 @@ if col2.button("❌ 맨 아래 삭제"):
     st.session_state.member_df = edited_df.drop(edited_df.index[-1]).reset_index(drop=True)
     st.rerun()
 
-# 4. 메인 팀 배정
+
+# 4. 음원 재생 함수 정의 (action_bgm.mp3)
+def play_audio(audio_file_path):
+    if os.path.exists(audio_file_path):
+        with open(audio_file_path, "rb") as f:
+            data = f.read()
+            b64 = base64.b64encode(data).decode()
+            md = f"""
+                <audio autoplay style="display:none;">
+                <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+                </audio>
+                """
+            st.markdown(md, unsafe_allow_html=True)
+
+
+# 5. 메인 팀 배정 함수
+def assign_teams_6565(players_df, num_teams):
+    base_count = len(players_df) // num_teams
+    remainder = len(players_df) % num_teams
+
+    # 6, 5, 6, 5 처럼 1번, 3번(홀수번) 테이블에 먼저 남은 인원을 배치
+    target_sizes = [base_count] * num_teams
+    for i in range(remainder):
+        target_sizes[i * 2 if (i * 2) < num_teams else (i * 2) % num_teams + 1] += 1
+
+    teams = [[] for _ in range(num_teams)]
+    player_list = list(players_df.itertuples(index=False))
+
+    curr_idx = 0
+    for t_idx, size in enumerate(target_sizes):
+        for _ in range(size):
+            row = player_list[curr_idx]
+            teams[t_idx].append((row.이름, row.에버리지))
+            curr_idx += 1
+
+    return teams, target_sizes
+
+
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
@@ -96,20 +134,18 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     if total_players < num_teams:
         st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다.")
     else:
+        # 효과음 재생 (스크립트 파일과 같은 경로의 action_bgm.mp3 재생)
+        play_audio("action_bgm.mp3")
+
         with st.spinner("Bowling 팀 배정 중..."):
-            time.sleep(1)
+            time.sleep(4)  # 효과음이 어느 정도 들릴 수 있도록 대기시간 지정
 
             if use_balance:
-                # [순차 배치(1->2->3->4) 적용 밸런스 로직]
-                best_teams = None;
+                best_teams = None
                 best_diff = 999.0
                 for _ in range(15000):
                     shuffled_players = players.sample(frac=1).reset_index(drop=True)
-                    temp_teams = [[] for _ in range(num_teams)]
-
-                    # 1, 2, 3, 4 순서대로 배정하여 1번, 3번 테이블에 먼저 인원이 들어가도록 설정
-                    for idx, row in shuffled_players.iterrows():
-                        temp_teams[idx % num_teams].append((row["이름"], row["에버리지"]))
+                    temp_teams, _ = assign_teams_6565(shuffled_players, num_teams)
 
                     team_averages = [np.mean([p[1] for p in t]) if t else 0 for t in temp_teams]
                     current_diff = max(team_averages) - min(team_averages)
@@ -122,11 +158,8 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         best_teams = temp_teams
                 teams = best_teams
             else:
-                # [순차 배치(1->2->3->4) 적용 랜덤 로직]
-                shuffled = players.sample(frac=1).values
-                teams = [[] for _ in range(num_teams)]
-                for idx, row in enumerate(shuffled):
-                    teams[idx % num_teams].append((row[1], row[2]))
+                shuffled_players = players.sample(frac=1).reset_index(drop=True)
+                teams, _ = assign_teams_6565(shuffled_players, num_teams)
 
             st.info(f"📊 **오늘 총 참석 인원:** {total_players}명 | 🏟️ **배정 테이블 수:** {num_teams}개")
 
