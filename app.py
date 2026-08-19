@@ -48,7 +48,7 @@ st.title("Bowling Liberte 정기전 테이블 배치")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 팀이 편성됩니다.")
 st.markdown("---")
 
-# 데이터 초기화
+# 2. 데이터 초기화 (최신 에버리지 반영)
 if "member_df" not in st.session_state:
     RAW_DATA = {
         "참석": [True] * 33,
@@ -74,7 +74,7 @@ use_balance = st.sidebar.toggle("⚖️ 에버리지 밸런스 맞춤 사용", v
 show_avg = st.sidebar.toggle("📊 통합 에버리지 수치 보기", value=True)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("👥 당일 참석자 명단 편집 (칠텐 7/8 기준 에버)")
+st.sidebar.subheader("👥 당일 참석자 명단 편집 (칠텐 8/12 기준 에버)")
 
 btn_col1, btn_col2 = st.sidebar.columns(2)
 if btn_col1.button("✅ 전체 선택"):
@@ -88,7 +88,7 @@ edited_df = st.sidebar.data_editor(st.session_state.member_df, use_container_wid
 
 col1, col2 = st.sidebar.columns(2)
 if col1.button("➕ 회원 추가"):
-    st.session_state.member_df = pd.concat([edited_df, pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150}])],
+    st.session_state.member_df = pd.concat([edited_df, pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150.0}])],
                                            ignore_index=True)
     st.rerun()
 if col2.button("❌ 맨 아래 삭제"):
@@ -96,26 +96,33 @@ if col2.button("❌ 맨 아래 삭제"):
     st.rerun()
 
 
-# 4. 음원 재생 함수 정의 (action_bgm.mp3)
+# 4. 음원 재생 함수 정의 (버튼을 다시 눌러도 매번 강제 재재생되도록 개선)
 def play_audio(audio_file_path):
     if os.path.exists(audio_file_path):
         with open(audio_file_path, "rb") as f:
             data = f.read()
             b64 = base64.b64encode(data).decode()
+            audio_id = f"audio_{int(time.time() * 1000)}"
             md = f"""
-                <audio autoplay style="display:none;">
+                <audio id="{audio_id}" autoplay style="display:none;">
                 <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
                 </audio>
+                <script>
+                    var audio = document.getElementById('{audio_id}');
+                    if (audio) {{
+                        audio.currentTime = 0;
+                        audio.play();
+                    }}
+                </script>
                 """
             st.markdown(md, unsafe_allow_html=True)
 
 
-# 5. 메인 팀 배정 함수
+# 5. 메인 팀 배정 함수 (6, 5, 6, 5 배치)
 def assign_teams_6565(players_df, num_teams):
     base_count = len(players_df) // num_teams
     remainder = len(players_df) % num_teams
 
-    # 6, 5, 6, 5 처럼 1번, 3번(홀수번) 테이블에 먼저 남은 인원을 배치
     target_sizes = [base_count] * num_teams
     for i in range(remainder):
         target_sizes[i * 2 if (i * 2) < num_teams else (i * 2) % num_teams + 1] += 1
@@ -141,11 +148,10 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     if total_players < num_teams:
         st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다.")
     else:
-        # 효과음 재생 (스크립트 파일과 같은 경로의 action_bgm.mp3 재생)
         play_audio("action_bgm.mp3")
 
         with st.spinner("Bowling 팀 배정 중..."):
-            time.sleep(5)  # 효과음이 어느 정도 들릴 수 있도록 대기시간 지정
+            time.sleep(5)
 
             if use_balance:
                 best_teams = None
