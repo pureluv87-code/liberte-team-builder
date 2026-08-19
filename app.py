@@ -43,7 +43,7 @@ if os.path.exists(IMAGE_NAME):
     with center_col:
         st.image(IMAGE_NAME, use_container_width=True)
 
-st.title("🎳 Liberte 정기전 테이블 배치")
+st.title("Bowling Liberte 정기전 테이블 배치")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 팀이 편성됩니다.")
 st.markdown("---")
 
@@ -96,29 +96,20 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
     if total_players < num_teams:
         st.error(f"🚨 현재 참석 체크된 인원({total_players}명)이 지정한 테이블 수({num_teams}개)보다 적습니다.")
     else:
-        with st.spinner("🎳 팀 배정 중..."):
+        with st.spinner("Bowling 팀 배정 중..."):
             time.sleep(1)
 
             if use_balance:
-                # [균등 분배를 고려한 밸런스 로직]
+                # [순차 배치(1->2->3->4) 적용 밸런스 로직]
                 best_teams = None;
                 best_diff = 999.0
                 for _ in range(15000):
                     shuffled_players = players.sample(frac=1).reset_index(drop=True)
                     temp_teams = [[] for _ in range(num_teams)]
 
-                    # 💡 지그재그(스네이크) 방식으로 인원을 골고루 분배 (예: 1->2->3->4->4->3->2->1 순환)
-                    team_idx = 0
-                    direction = 1
+                    # 1, 2, 3, 4 순서대로 배정하여 1번, 3번 테이블에 먼저 인원이 들어가도록 설정
                     for idx, row in shuffled_players.iterrows():
-                        temp_teams[team_idx].append((row["이름"], row["에버리지"]))
-                        team_idx += direction
-                        if team_idx == num_teams:
-                            team_idx = num_teams - 1
-                            direction = -1
-                        elif team_idx < 0:
-                            team_idx = 0
-                            direction = 1
+                        temp_teams[idx % num_teams].append((row["이름"], row["에버리지"]))
 
                     team_averages = [np.mean([p[1] for p in t]) if t else 0 for t in temp_teams]
                     current_diff = max(team_averages) - min(team_averages)
@@ -130,30 +121,20 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
                         best_diff = current_diff
                         best_teams = temp_teams
                 teams = best_teams
-                st.info(f"📊 **오늘 총 참석 인원:** {total_players}명 | 🏟️ **배정 테이블 수:** {num_teams}개")
             else:
-                # [랜덤 배정 로직 - 스네이크 방식으로 인원 고르게 분배]
+                # [순차 배치(1->2->3->4) 적용 랜덤 로직]
                 shuffled = players.sample(frac=1).values
                 teams = [[] for _ in range(num_teams)]
-                team_idx = 0
-                direction = 1
-                for row in shuffled:
-                    teams[team_idx].append((row[1], row[2]))
-                    team_idx += direction
-                    if team_idx == num_teams:
-                        team_idx = num_teams - 1
-                        direction = -1
-                    elif team_idx < 0:
-                        team_idx = 0
-                        direction = 1
+                for idx, row in enumerate(shuffled):
+                    teams[idx % num_teams].append((row[1], row[2]))
 
-                st.info(f"📊 **오늘 총 참석 인원:** {total_players}명 | 🏟️ **배정 테이블 수:** {num_teams}개")
+            st.info(f"📊 **오늘 총 참석 인원:** {total_players}명 | 🏟️ **배정 테이블 수:** {num_teams}개")
 
             # 결과 출력
             table_cols = st.columns([1] * num_teams)
             for i in range(num_teams):
                 with table_cols[i]:
-                    st.markdown(f"### 🏟️ {i + 1}번 테이블 ({len(teams[i])}명)")
+                    st.markdown(f"### 🏟️ {i + 1}번 테이블")
                     current_team_df = pd.DataFrame(teams[i], columns=["이름", "에버리지"])
 
                     left = [row[0] for idx, row in enumerate(teams[i]) if idx % 2 == 0]
