@@ -96,18 +96,16 @@ if col2.button("❌ 맨 아래 삭제"):
     st.rerun()
 
 
-# 4. 음원 재생 함수 정의 (st.empty 및 JS Audio 객체 사용으로 연속 재생 보장)
+# 4. 음원 재생 함수 정의 (연속 클릭 시에도 무조건 재생되도록 JS Audio 객체 방식 적용)
 def play_audio(audio_file_path):
     if os.path.exists(audio_file_path):
         with open(audio_file_path, "rb") as f:
             data = f.read()
             b64 = base64.b64encode(data).decode()
 
-            # 컨테이너를 생성하여 이전 오디오 엘리먼트를 초기화
             audio_container = st.empty()
             timestamp = int(time.time() * 1000)
 
-            # JavaScript Audio 객체를 통해 강제 즉시 재생
             md = f"""
                 <div id="audio_trigger_{timestamp}"></div>
                 <script>
