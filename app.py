@@ -48,21 +48,21 @@ st.title("Bowling Liberte 정기전 테이블 배치")
 st.write("왼쪽 메뉴에서 당일 참석자를 체크하고 아래 '🔥 팀 짜기 시작' 버튼을 누르면 팀이 편성됩니다.")
 st.markdown("---")
 
-# 2. 데이터 초기화 (최신 에버리지 반영)
+# 2. 데이터 초기화 (칠텐 9/9 기준 최신 에버리지 반영)
 if "member_df" not in st.session_state:
     RAW_DATA = {
         "참석": [True] * 33,
         "이름": [
-            "김정수", "문상원", "박진원", "박기덕", "원종혁", "정상현", "이준협", "이상현", "유현재", "강병철",
-            "한승오", "김용태", "송미연", "안치관", "최낙민", "김지현", "장혜린", "김지원", "조인희", "윤관호",
-            "김수진", "김민표", "추진", "유명선", "추송", "안호성", "정민영", "권혁환", "이도연", "김정아",
+            "김정수", "문상원", "박기덕", "박진원", "원종혁", "장혜린", "이준협", "정상현", "이상현", "한승오",
+            "유현재", "강병철", "김용태", "최낙민", "안치관", "김지현", "송미연", "김지원", "윤관호", "김민표",
+            "조인희", "추진", "김수진", "유명선", "추송", "정민영", "안호성", "이도연", "권혁환", "김정아",
             "홍소연", "심기홍", "장성민"
         ],
         "에버리지": [
-            222.9, 217.4, 213.7, 213.5, 212.2, 209.6, 208.9, 208.8, 205.0, 205.0,
-            204.2, 204.1, 201.3, 200.6, 199.9, 197.7, 196.3, 194.0, 192.0, 192.0,
-            190.3, 189.9, 188.4, 178.1, 176.7, 170.1, 170.1, 167.1, 165.3, 164.0,
-            159.7, 158.7, 154.0
+            225.4, 217.4, 213.5, 213.4, 212.2, 211.9, 210.0, 208.9, 208.5, 206.1,
+            205.8, 205.0, 204.1, 201.6, 201.2, 200.7, 200.0, 197.0, 191.6, 189.9,
+            189.5, 188.4, 188.4, 178.1, 174.8, 170.1, 166.5, 165.1, 164.5, 163.3,
+            160.6, 158.2, 154.0
         ]
     }
     st.session_state.member_df = pd.DataFrame(RAW_DATA)
@@ -74,27 +74,34 @@ use_balance = st.sidebar.toggle("⚖️ 에버리지 밸런스 맞춤 사용", v
 show_avg = st.sidebar.toggle("📊 통합 에버리지 수치 보기", value=True)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("👥 당일 참석자 명단 편집 (칠텐 8/12 기준 에버)")
+st.sidebar.subheader("👥 당일 참석자 명단 편집 (칠텐 9/9 기준 에버)")
 
 btn_col1, btn_col2 = st.sidebar.columns(2)
 if btn_col1.button("✅ 전체 선택"):
-    st.session_state.member_df["참석"] = True;
+    st.session_state.member_df["참석"] = True
     st.rerun()
 if btn_col2.button("⬜ 전체 해제"):
-    st.session_state.member_df["참석"] = False;
+    st.session_state.member_df["참석"] = False
     st.rerun()
+
+# 💡 [추가] 실시간 참석 인원 카운트 표시
+current_checked = int(st.session_state.member_df["참석"].sum())
+total_members = len(st.session_state.member_df)
+st.sidebar.info(f"📌 **현재 참석 체크:** `{current_checked}` / `{total_members}` 명")
 
 edited_df = st.sidebar.data_editor(st.session_state.member_df, use_container_width=True, hide_index=True)
 
+# data_editor 변경사항을 session_state에 즉시 동기화
+st.session_state.member_df = edited_df
+
 col1, col2 = st.sidebar.columns(2)
 if col1.button("➕ 회원 추가"):
-    st.session_state.member_df = pd.concat([edited_df, pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150.0}])],
-                                           ignore_index=True)
+    st.session_state.member_df = pd.concat([edited_df, pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150.0}])], ignore_index=True)
     st.rerun()
 if col2.button("❌ 맨 아래 삭제"):
-    st.session_state.member_df = edited_df.drop(edited_df.index[-1]).reset_index(drop=True)
-    st.rerun()
-
+    if len(edited_df) > 0:
+        st.session_state.member_df = edited_df.drop(edited_df.index[-1]).reset_index(drop=True)
+        st.rerun()
 
 # 4. 음원 재생 함수 정의 (session_state 기반 완벽 재재생 보장)
 def play_audio(audio_file_path):
@@ -103,14 +110,12 @@ def play_audio(audio_file_path):
             data = f.read()
             b64 = base64.b64encode(data).decode()
 
-            # 카운터 증가로 매번 완전히 새로운 Key 생성
             if "audio_counter" not in st.session_state:
                 st.session_state.audio_counter = 0
             st.session_state.audio_counter += 1
 
             audio_key = f"audio_{st.session_state.audio_counter}"
 
-            # HTML5 오디오 태그 + autoplay (가장 안정적)
             audio_html = f"""
                 <audio key="{audio_key}" autoplay style="display:none;">
                     <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
@@ -118,8 +123,7 @@ def play_audio(audio_file_path):
             """
             st.components.v1.html(audio_html, height=0, width=0)
 
-
-# 5. 메인 팀 배정 함수 (6, 5, 6, 5 배치)
+# 5. 메인 팀 배정 함수
 def assign_teams_6565(players_df, num_teams):
     base_count = len(players_df) // num_teams
     remainder = len(players_df) % num_teams
@@ -140,7 +144,6 @@ def assign_teams_6565(players_df, num_teams):
 
     return teams, target_sizes
 
-
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
     players = edited_df[edited_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
@@ -152,7 +155,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
         play_audio("action_bgm.mp3")
 
         with st.spinner("Bowling 팀 배정 중..."):
-            time.sleep(5)
+            time.sleep(4)
 
             if use_balance:
                 best_teams = None
