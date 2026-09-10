@@ -178,7 +178,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
         play_audio("action_bgm.mp3")
 
         with st.spinner("Bowling 팀 배정 중..."):
-            time.sleep(2)
+            time.sleep(5)
 
             if use_balance:
                 best_teams = None
