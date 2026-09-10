@@ -135,14 +135,18 @@ def play_audio(audio_file_path):
             """
             st.components.v1.html(audio_html, height=0, width=0)
 
+
 # 5. 메인 팀 배정 함수
 def assign_teams_6565(players_df, num_teams):
     base_count = len(players_df) // num_teams
     remainder = len(players_df) % num_teams
 
+    # 기본 인원으로 초기화
     target_sizes = [base_count] * num_teams
+
+    # 나머지를 순차적으로 1명씩만 균등 배분 (중복 방지)
     for i in range(remainder):
-        target_sizes[i * 2 if (i * 2) < num_teams else (i * 2) % num_teams + 1] += 1
+        target_sizes[i] += 1
 
     teams = [[] for _ in range(num_teams)]
     player_list = list(players_df.itertuples(index=False))
