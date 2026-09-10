@@ -67,13 +67,15 @@ if "member_df" not in st.session_state:
     }
     st.session_state.member_df = pd.DataFrame(RAW_DATA)
 
-# 💡 [추가] data_editor 수정 시 즉시 session_state 업데이트하는 콜백 함수
+
+# data_editor 수정 시 즉시 session_state 업데이트하는 콜백 함수
 def update_editor_changes():
     if "editor_key" in st.session_state:
         edited_cells = st.session_state.editor_key.get("edited_rows", {})
         for row_idx, changes in edited_cells.items():
             for col_name, val in changes.items():
                 st.session_state.member_df.iat[row_idx, st.session_state.member_df.columns.get_loc(col_name)] = val
+
 
 # 3. 사이드바 설정
 st.sidebar.header("⚙️ 정기전 설정")
@@ -97,7 +99,6 @@ current_checked = int(st.session_state.member_df["참석"].sum())
 total_members = len(st.session_state.member_df)
 st.sidebar.info(f"📌 **현재 참석 체크:** `{current_checked}` / `{total_members}` 명")
 
-# key 및 on_change 적용하여 체크 즉시 반응
 edited_df = st.sidebar.data_editor(
     st.session_state.member_df,
     use_container_width=True,
@@ -108,12 +109,15 @@ edited_df = st.sidebar.data_editor(
 
 col1, col2 = st.sidebar.columns(2)
 if col1.button("➕ 회원 추가"):
-    st.session_state.member_df = pd.concat([st.session_state.member_df, pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150.0}])], ignore_index=True)
+    st.session_state.member_df = pd.concat(
+        [st.session_state.member_df, pd.DataFrame([{"참석": True, "이름": "새회원", "에버리지": 150.0}])], ignore_index=True)
     st.rerun()
 if col2.button("❌ 맨 아래 삭제"):
     if len(st.session_state.member_df) > 0:
-        st.session_state.member_df = st.session_state.member_df.drop(st.session_state.member_df.index[-1]).reset_index(drop=True)
+        st.session_state.member_df = st.session_state.member_df.drop(st.session_state.member_df.index[-1]).reset_index(
+            drop=True)
         st.rerun()
+
 
 # 4. 음원 재생 함수 정의
 def play_audio(audio_file_path):
@@ -136,17 +140,19 @@ def play_audio(audio_file_path):
             st.components.v1.html(audio_html, height=0, width=0)
 
 
-# 5. 메인 팀 배정 함수
+# 5. 메인 팀 배정 함수 (6, 5, 6, 5 교대 배치 및 중복 할당 방지)
 def assign_teams_6565(players_df, num_teams):
     base_count = len(players_df) // num_teams
     remainder = len(players_df) % num_teams
 
-    # 기본 인원으로 초기화
     target_sizes = [base_count] * num_teams
 
-    # 나머지를 순차적으로 1명씩만 균등 배분 (중복 방지)
+    # 짝수번 테이블(0, 2, 4...) -> 홀수번 테이블(1, 3, 5...) 순서로 우선순위 지정
+    priority_order = [i for i in range(0, num_teams, 2)] + [i for i in range(1, num_teams, 2)]
+
+    # 나머지를 중복 없이 우선순위에 따라 1명씩만 할당
     for i in range(remainder):
-        target_sizes[i] += 1
+        target_sizes[priority_order[i]] += 1
 
     teams = [[] for _ in range(num_teams)]
     player_list = list(players_df.itertuples(index=False))
@@ -160,6 +166,7 @@ def assign_teams_6565(players_df, num_teams):
 
     return teams, target_sizes
 
+
 if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type="primary", use_container_width=True):
     players = st.session_state.member_df[st.session_state.member_df["참석"] == True].dropna(subset=["이름", "에버리지"]).copy()
     players["에버리지"] = pd.to_numeric(players["에버리지"])
@@ -171,7 +178,7 @@ if st.button("🔥 지정된 테이블 수로 팀 짜기 시작 (클릭)", type=
         play_audio("action_bgm.mp3")
 
         with st.spinner("Bowling 팀 배정 중..."):
-            time.sleep(5)
+            time.sleep(2)
 
             if use_balance:
                 best_teams = None
